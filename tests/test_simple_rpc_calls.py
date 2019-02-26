@@ -14,10 +14,6 @@ from asyncio_rpc.client import WrappedException
 do_rpc_call = do_rpc_call_fixture
 
 
-# TODO: on travis this should be 'localhost'
-HOST = 'redis'
-
-
 @dataclass
 class CustomDataModel:
     x: int

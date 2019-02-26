@@ -1,6 +1,9 @@
 import pytest
 import asyncio
+
+from os import environ
 from uuid import uuid4
+
 
 from asyncio_rpc.serialization import msgpack as msgpack_serialization
 
@@ -9,11 +12,11 @@ from asyncio_rpc.client import RPCClient
 from asyncio_rpc.models import RPCCall, RPCStack
 from asyncio_rpc.commlayers.redis import RPCRedisCommLayer
 
-# TODO: on travis this should be 'localhost'
-HOST = 'redis'
+# Set to env_var REDIS_HOST or 'localhost' as default
+REDIS_HOST = environ.get('REDIS_HOST', 'localhost')
 
 
-async def rpc_commlayer(subchannel, pubchannel, host=HOST):
+async def rpc_commlayer(subchannel, pubchannel, host=REDIS_HOST):
     """
     Get a RPCRedisCommLayer with subchannel/pubchannel
     """
