@@ -3,7 +3,9 @@ from typing import List, Dict, Any
 
 
 class RPCBase:
-    pass
+    """
+    Baseclass to identify all RPC dataclasses
+    """
 
 
 @dataclass
@@ -62,7 +64,11 @@ class RPCStack(RPCBase):
 @dataclass
 class RPCResult(RPCBase):
     """
-    Represents the result of a remote procedure call
+    Represents the result of a remote procedure call (RPCStack)
+
+    :param uid: is set to RPCStack.uid
+    :param namespace: is set to RPCStack.namespace
+    :param data: is the result of the RPCStack call
     """
     uid: str
     namespace: str
@@ -74,6 +80,11 @@ class RPCException(RPCBase):
     """
     Represents an exception raised during executing the remote procedure
     call server-side
+
+    :param uid: is set to RPCStack.uid
+    :param namespace: is set to RPCStack.namespace
+    :param classname: the classname of the exception raised
+    :param exc_args: the exception args as a list
     """
     uid: str
     namespace: str

@@ -42,14 +42,29 @@ class DataclassTest:
     data: np.ndarray
 
 
+@dataclass
+class DataclassWrapper:
+    dataclass_test: DataclassTest
+
+
 msgpack_serialization.register(DataclassTest)
+msgpack_serialization.register(DataclassWrapper)
 
 
 def test_dataclass_serialization(serialize_deserialize):
     value = DataclassTest(101, np.arange(100, dtype=np.float32))
     deserialized = serialize_deserialize(value)
     assert value.uid == deserialized.uid
-    assert np.all(value.data == serialize_deserialize(value).data)
+    assert np.all(value.data == deserialized.data)
+
+
+def test_dataclass_wrapper_serialization(serialize_deserialize):
+    value = DataclassWrapper(
+        DataclassTest(101, np.arange(100, dtype=np.float32)))
+    deserialized = serialize_deserialize(value)
+    assert value.dataclass_test.uid == deserialized.dataclass_test.uid
+    assert np.all(
+        value.dataclass_test.data == deserialized.dataclass_test.data)
 
 
 @dataclass
@@ -62,3 +77,7 @@ def test_unregistered_serialization(serialize_deserialize):
     value = UnregisteredTest(101, np.arange(100, dtype=np.float32))
     with pytest.raises(TypeError):
         serialize_deserialize(value)
+
+
+
+

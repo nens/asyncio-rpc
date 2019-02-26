@@ -149,6 +149,7 @@ async def rpc_server():
 async def do_rpc_call():
     async def wrapper(service_client, executor, func, custom_dataclasses=[],
                       client_processing=False):
+        # Initialize both client & server
         rpc_client = RPCClient(await rpc_commlayer(b'pub', b'sub'))
         rpc_server = RPCServer(await rpc_commlayer(b'sub', b'pub'))
 
