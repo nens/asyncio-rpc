@@ -7,7 +7,7 @@ cache: pip
 #before_install:
 
 install:
-  - pip install -r requirements_dev.txt -e .
+  - pip install -r requirements_dev.txt
 
 before_script:
   - pip install flake8 sphinx
