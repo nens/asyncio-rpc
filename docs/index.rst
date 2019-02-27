@@ -5,6 +5,7 @@ Welcome to asyncio-rpc documentation!
    :maxdepth: 3
    :caption: Contents:
 
+   readme
    installation
 
 Indices and tables
