@@ -6,6 +6,9 @@ cache: pip
 
 #before_install:
 
+services:
+  - redis-server
+
 install:
   - pip install -r requirements_dev.txt
 
