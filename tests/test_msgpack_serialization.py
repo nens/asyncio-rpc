@@ -77,7 +77,3 @@ def test_unregistered_serialization(serialize_deserialize):
     value = UnregisteredTest(101, np.arange(100, dtype=np.float32))
     with pytest.raises(TypeError):
         serialize_deserialize(value)
-
-
-
-
