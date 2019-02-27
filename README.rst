@@ -15,7 +15,7 @@ The Python package for the asyncio remote procedure calling
 
 
 * Free software: BSD license
-* Documentation: https://threedigrid.readthedocs.io.
+* Documentation: https://httpsgithubcomnensasyncio-rpc.readthedocs.io.
 
 
 Overview
