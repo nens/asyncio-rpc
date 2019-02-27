@@ -19,7 +19,11 @@ class RPCClient(object):
     to a RPCServer via a rpc_commlayer.
     """
 
-    def __init__(self, rpc_commlayer: AbstractRPCCommLayer = None):
+    def __init__(self, rpc_commlayer: AbstractRPCCommLayer):
+        """
+        Initialize a new RPCClient by providing an implementation of
+        AbstractRPCCommlayer
+        """
         assert isinstance(rpc_commlayer, AbstractRPCCommLayer)
         self.rpc_commlayer = rpc_commlayer
         self.futures = {}
@@ -186,14 +190,3 @@ class RPCClient(object):
         await asyncio.gather(
             self.rpc_commlayer.subscribe(self._on_rpc_event),
             self._process_queue(on_rpc_message))
-
-#    async def rpc_call_stack(self, func_calls_stack, namespace=None):
-#        assert namespace is not None
-#        rpc_func_stack = RPCStack(
-#            uuid4().hex, namespace, RESULT_EXPIRE_TIME, [])
-#
-#        for func_name, func_args, func_kwargs in func_calls_stack:
-#            rpc_func_stack.stack.append(
-#                RPCCall(func_name, func_args, func_kwargs))
-#
-#        return await self.rpc_call(rpc_func_stack)

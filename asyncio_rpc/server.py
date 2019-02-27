@@ -1,5 +1,6 @@
 import asyncio
-from asyncio_rpc.models import RPCStack, RPCResult, RPCException
+from typing import List
+from asyncio_rpc.models import RPCStack, RPCResult, RPCException, RPCCall
 from asyncio_rpc.commlayers.base import AbstractRPCCommLayer
 
 
@@ -128,3 +129,41 @@ class RPCServer(object):
             self.rpc_commlayer.subscribe(self._on_rpc_event),
             self._process_queue()
         )
+
+
+class DefaultExecutor:
+    """
+    Default executor implementation, override if necessary
+    """
+
+    def __init__(self, namespace, instance):
+        assert namespace is not None
+        assert instance is not None
+        self.namespace = namespace
+        self.instance = instance
+
+    async def rpc_call(self, stack: List[RPCCall] = []):
+        """
+        Process incoming rpc call stack.
+        The stack can contain multiple chained function calls for example:
+            node.filter(id=1).reproject_to('4326').data
+        """
+
+        resource = self.instance
+
+        for rpc_func_call in stack:
+            assert isinstance(rpc_func_call, RPCCall)
+
+            # Try to get the function/property from self.instance
+            instance_attr = getattr(resource, rpc_func_call.func_name)
+
+            if callable(instance_attr):
+                # Function
+                resource = instance_attr(
+                    *rpc_func_call.func_args,
+                    **rpc_func_call.func_kwargs)
+            else:
+                # Asume property
+                resource = instance_attr
+
+        return resource

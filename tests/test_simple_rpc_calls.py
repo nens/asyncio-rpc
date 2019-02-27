@@ -4,11 +4,12 @@ from uuid import uuid4
 
 
 from tests.utils import (
-    Executor, do_rpc_call as do_rpc_call_fixture
+    do_rpc_call as do_rpc_call_fixture
 )
 
 from asyncio_rpc.models import RPCCall, RPCStack
 from asyncio_rpc.client import WrappedException
+from asyncio_rpc.server import DefaultExecutor
 
 
 do_rpc_call = do_rpc_call_fixture
@@ -34,13 +35,17 @@ class Service(object):
     """
 
     def __init__(self):
-        self.data = {'foo': 'bar'}
+        self._data = {'foo': 'bar'}
 
     def multiply(self, x, y=1):
         return x * y
 
+    @property
+    def data(self):
+        return self._data
+
     def get_item(self, key):
-        return self.data[key]
+        return self._data[key]
 
     def custom_error(self):
         raise CustomException("Foobar")
@@ -56,8 +61,14 @@ class ServiceClient(object):
     that can be called on the TestService instance.
     """
     def __init__(self, client):
-
         self.client = client
+
+    @property
+    async def data(self):
+        rpc_func_call = RPCCall('data', [], {})
+        rpc_func_stack = RPCStack(
+            uuid4().hex, 'TEST', 300, [rpc_func_call])
+        return await self.client.rpc_call(rpc_func_stack)
 
     async def multiply(self, x, y=100):
         rpc_func_call = RPCCall('multiply', [x], {'y': y})
@@ -90,7 +101,7 @@ async def test_simple_call(do_rpc_call):
     test_service_client = ServiceClient(None)
     result = await do_rpc_call(
         test_service_client,
-        Executor(Service()),
+        DefaultExecutor("TEST", Service()),
         test_service_client.multiply(100, 100))
     assert result == 100 * 100
 
@@ -100,7 +111,7 @@ async def test_simple_call_with_client_processing(do_rpc_call):
     test_service_client = ServiceClient(None)
     result = await do_rpc_call(
         test_service_client,
-        Executor(Service()),
+        DefaultExecutor("TEST", Service()),
         test_service_client.multiply(100, 100),
         client_processing=True)
     assert result == 100 * 100
@@ -111,9 +122,19 @@ async def test_simple_call2(do_rpc_call):
     test_service_client = ServiceClient(None)
     result = await do_rpc_call(
         test_service_client,
-        Executor(Service()),
+        DefaultExecutor("TEST", Service()),
         test_service_client.get_item('foo'))
     assert result == 'bar'
+
+
+@pytest.mark.asyncio
+async def test_property(do_rpc_call):
+    test_service_client = ServiceClient(None)
+    result = await do_rpc_call(
+        test_service_client,
+        DefaultExecutor("TEST", Service()),
+        test_service_client.data)
+    assert result == {'foo': 'bar'}
 
 
 @pytest.mark.asyncio
@@ -122,7 +143,7 @@ async def test_key_error(do_rpc_call):
     with pytest.raises(KeyError):
         await do_rpc_call(
             test_service_client,
-            Executor(Service()),
+            DefaultExecutor("TEST", Service()),
             test_service_client.get_item('bar'))
 
 
@@ -132,7 +153,7 @@ async def test_not_builtin_exception(do_rpc_call):
     with pytest.raises(WrappedException):
         await do_rpc_call(
             test_service_client,
-            Executor(Service()),
+            DefaultExecutor("TEST", Service()),
             test_service_client.custom_error())
 
 
@@ -142,7 +163,7 @@ async def test_custom_data_model(do_rpc_call):
     value = CustomDataModel(100, 100)
     result = await do_rpc_call(
             test_service_client,
-            Executor(Service()),
+            DefaultExecutor("TEST", Service()),
             test_service_client.multiply_with_dataclass(value),
             custom_dataclasses=[CustomDataModel])
     assert result == value.multiply()

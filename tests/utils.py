@@ -48,40 +48,6 @@ class Service(object):
         raise CustomException("Foobar")
 
 
-class Executor():
-    """
-    Executor that executes (rpc) functions on the
-    TestService
-    """
-    namespace = "TEST"
-
-    def __init__(self, model):
-        self.model = model
-
-    async def rpc_call(self, stack=[]):
-        """
-        Process incoming rpc call stack.
-        The stack can contain multiple chained function calls for example:
-            node.filter(id=1).reproject_to('4326').data
-        """
-
-        res = self.model
-        for rpc_func_call in stack:
-            assert isinstance(rpc_func_call, RPCCall)
-
-            func_name = rpc_func_call.func_name
-            func = getattr(res, func_name)
-            if callable(func):
-                # Function
-                res = func(
-                    *rpc_func_call.func_args, **rpc_func_call.func_kwargs)
-            else:
-                # Asume property
-                res = func
-
-        return res
-
-
 class ServiceClient(object):
     """
     TestService client, exposing (rpc) functions

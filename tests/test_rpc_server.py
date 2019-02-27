@@ -1,26 +1,30 @@
 import pytest
 
 from tests.utils import (
-    Executor, rpc_server as rpc_server_fixture
+    rpc_server as rpc_server_fixture
 )
-from asyncio_rpc.server import NamespaceError
+from asyncio_rpc.server import NamespaceError, DefaultExecutor
 from asyncio_rpc.models import RPCStack
 
 rpc_server = rpc_server_fixture
 
 
+class MockService:
+    pass
+
+
 @pytest.mark.asyncio
 async def test_registration(rpc_server):
-    rpc_server.register(Executor(None))
+    rpc_server.register(DefaultExecutor("TEST", MockService()))
     await rpc_server.rpc_commlayer.close()
 
 
 @pytest.mark.asyncio
 async def test_double_registration_error(rpc_server):
-    rpc_server.register(Executor(None))
+    rpc_server.register(DefaultExecutor("TEST", MockService()))
 
     with pytest.raises(NamespaceError):
-        rpc_server.register(Executor(None))
+        rpc_server.register(DefaultExecutor("TEST", MockService()))
 
     await rpc_server.rpc_commlayer.close()
 
