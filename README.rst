@@ -36,8 +36,8 @@ Examples
 The examples can be run from this directory, for the dataclass example 
 (using localhost as redis host):
 
-    $ python3.7 -m examples.dataclass.server localhost
-    $ python3.7 -m examples.dataclass.client localhost
+    >>> python3.7 -m examples.dataclass.server localhost
+    >>> python3.7 -m examples.dataclass.client localhost
 
 
 Testing
