@@ -30,6 +30,16 @@ Features
  - Other serialization methods and communication layers can be added
 
 
+Examples
+--------
+
+The examples can be run from this directory, for the dataclass example 
+(using localhost as redis host):
+
+$ python3.7 -m examples.dataclass.server localhost
+$ python3.7 -m examples.dataclass.client localhost
+
+
 Testing
 -------
-docker-compose run pytest --cov=asyncio_rpc --cov-report=html
+    >>> docker-compose run pytest --cov=asyncio_rpc --cov-report=html
