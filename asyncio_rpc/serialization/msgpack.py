@@ -1,10 +1,11 @@
+import dataclasses
 import msgpack
 import numpy as np
+from abc import ABC, abstractmethod
 from io import BytesIO
 from datetime import datetime
-import dataclasses
 from lz4.frame import compress as lz4_compress, decompress as lz4_decompress
-
+from typing import Any
 
 # Maximum byte lengths for str/ext
 MAX_STR_LEN = 2147483647
@@ -26,108 +27,155 @@ def register(obj_def):
     For example obj_def and required methods, see NumpyArray below
     """
     if dataclasses.is_dataclass(obj_def):
+        # Handle dataclasses, every dataclass needs to be registered
+        # via register.
         class_name = obj_def.__name__
         REGISTRY['serializables'][class_name] = obj_def
         REGISTRY['obj_types'][obj_def] = DataclassHandler
 
-        # Register DataclassHandler if not done already
+        # Register the DataclassHandler if not done already
         if DataclassHandler.ext_type not in REGISTRY['ext_types']:
             REGISTRY['ext_types'][
                 DataclassHandler.ext_type] = DataclassHandler
     else:
+        # Assume the obj_def has obj_type and ext_type, as can be
+        # seen below.
         assert hasattr(obj_def, 'obj_type') and hasattr(obj_def, 'ext_type')
         REGISTRY['obj_types'][obj_def.obj_type] = obj_def
         REGISTRY['ext_types'][obj_def.ext_type] = obj_def
 
 
-# TODO: create abstract class for 'obj_def' ?
-class NumpyArray:
+class AbstractHandler(ABC):
+    ext_type: int = None  # Unique number
+    obj_type: Any = None  # Unique object type
+
+    @classmethod
+    @abstractmethod
+    def packb(cls, instance: Any) -> bytes:
+        """
+        Pack the instance into bytes
+        """
+
+    @classmethod
+    @abstractmethod
+    def unpackb(cls, data: bytes) -> Any:
+        """
+        Unpack the data back into an instance
+        """
+
+
+class NumpyArrayHandler(AbstractHandler):
     """
     Use np.save and np.load to serialize/deserialize
     numpy array's.
-
-    Compress/decompress data with lz4
     """
     ext_type = 1
     obj_type = np.ndarray
 
+    # Note:
     # More generic approach, but a bit slower than
     # packing it as a list/tuple with (dtype, shape, bytes)
     @classmethod
-    def packb(cls, np_ndarray):
+    def packb(cls, array: np.ndarray) -> bytes:
         buf = BytesIO()
-        np.save(buf, np_ndarray)
+        np.save(buf, array)
         buf.seek(0)
         return buf.read()
 
     @classmethod
-    def unpackb(cls, bytes_data):
-        buf = BytesIO(bytes_data)
+    def unpackb(cls, data: bytes) -> np.ndarray:
+        buf = BytesIO(data)
         buf.seek(0)
         return np.load(buf)
 
 
-class NumpyStructuredArray(NumpyArray):
+class NumpyStructuredArrayHandler(NumpyArrayHandler):
     ext_type = 2
     obj_type = np.void  # = the type of structured array's...
 
 
-class Datetime:
+class DatetimeHandler:
+    """
+    Serialize datetime instances as timestamps.
+    """
     ext_type = 3
     obj_type = datetime
 
     @classmethod
-    def packb(cls, dt):
+    def packb(cls, dt: datetime) -> bytes:
         return b'%f' % dt.timestamp()
 
     @classmethod
-    def unpackb(cls, bytes_data):
-        return datetime.fromtimestamp(float(bytes_data))
+    def unpackb(cls, data: bytes) -> datetime:
+        return datetime.fromtimestamp(float(data))
 
 
 class DataclassHandler:
-    ext_type = 5
+    """
+    Serialize dataclasses by serializing the .__dict__
+    of dataclasses. This allows recursively serialization for example:
+    dataclasses in dataclasses or Numpy array's in dataclasses.
+    """
+    ext_type = 4
 
     @classmethod
-    def packb(cls, obj):
+    def packb(cls, obj) -> bytes:
         dataclass_name = obj.__class__.__name__
         if isinstance(dataclass_name, str):
             dataclass_name = dataclass_name.encode('utf-8')
 
-        # Recursively process dataclasses of the dataclass
+        # Recursively process dataclasses of the dataclass,
+        # serialize as tuple(dataclass_name, __dict__)
         return dumpb(
             (dataclass_name, obj.__dict__),
             do_compress=False)
 
     @classmethod
-    def unpackb(cls, bytes_data):
+    def unpackb(cls, data):
         # Recursively process the contents of the dataclass
         classname, data = loadb(
-            bytes_data, do_decompress=False, raw=False)
+            data, do_decompress=False, raw=False)
         # Return registered class or Serializable (as default)
         assert classname in REGISTRY['serializables']
         klass = REGISTRY['serializables'][classname]
         return klass(**data)
 
 
-# Register custom types
-register(NumpyArray)
-register(NumpyStructuredArray)
-register(Datetime)
+# Register custom handlers
+register(NumpyArrayHandler)
+register(NumpyStructuredArrayHandler)
+register(DatetimeHandler)
 
 
-def default(obj):
+def default(obj: Any):
+    """
+    Serialize (dumpb) hook for obj types that msgpack does not
+    process out of the box.
+    """
     if type(obj) in REGISTRY['obj_types']:
-        obj_serialization = REGISTRY['obj_types'][type(obj)]
+        # If the type is in the registry, use the
+        # handler to serialize the obj
+        handler = REGISTRY['obj_types'][type(obj)]
         return msgpack.ExtType(
-            obj_serialization.ext_type, obj_serialization.packb(obj))
+            handler.ext_type, handler.packb(obj))
+
     raise TypeError("Unknown type: %r" % (obj,))
 
 
-def ext_hook(ext_type, bytes_data):
+def ext_hook(ext_type: int, bytes_data: bytes):
+    """
+    Deserialize (loadb) hook for ext_types that are
+    not default in msgpack.
+
+    ext_types are user defined numbers for special
+    deserialization handling.
+    """
     if ext_type in REGISTRY['ext_types']:
-        obj_serialization = REGISTRY['ext_types'][ext_type]
-        return obj_serialization.unpackb(bytes_data)
+        # If the ext_type is in the registry, use the
+        # handler to deserialize the bytes_data
+        handler = REGISTRY['ext_types'][ext_type]
+        return handler.unpackb(bytes_data)
+
     raise TypeError("Unknown ext_type: %r" % (ext_type,))  # pragma: no cover
 
 
@@ -135,14 +183,20 @@ def do_nothing(x):
     return x
 
 
-def dumpb(obj, do_compress=True, compress_func=lz4_compress):
+def dumpb(instance: Any, do_compress=True, compress_func=lz4_compress):
+    """
+    Dump/pack instance with msgpack to bytes
+    """
     if not do_compress:
         compress_func = do_nothing
-    return compress_func(msgpack.packb(obj, default=default))
+    return compress_func(msgpack.packb(instance, default=default))
 
 
-def loadb(packed, do_decompress=True, decompress_func=lz4_decompress,
+def loadb(packed: bytes, do_decompress=True, decompress_func=lz4_decompress,
           raw=False):
+    """
+    Load/unpack bytes back to instance
+    """
     if packed is None:
         return None
     if not do_decompress:

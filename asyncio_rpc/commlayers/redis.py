@@ -6,25 +6,38 @@ RESULT_EXPIRE_TIME = 300  # seconds
 
 
 class RPCRedisCommLayer(AbstractRPCCommLayer):
+    """
+    Redis remote procedure call communication layer
+    """
+
     @classmethod
     async def create(
             cls, subchannel=b'subchannel', pubchannel=b'pubchannel',
             host='localhost', port=6379, serialization=None):
+        """
+        Use a static create method to allow async context,
+        __init__ cannot be async.
+        """
+
         self = RPCRedisCommLayer(subchannel, pubchannel)
+
         # Create communicationLayer
         self.host = host
         self.port = port
         self.serialization = serialization
+
+        # Redis for publishing
         self.redis = await create_redis(
             f'redis://{host}')
 
+        # By default register all RPC models
         for model in SERIALIZABLE_MODELS:
             # Register models to serialization
             serialization.register(model)
 
-        # Not subscribed..
         self.subscribed = False
 
+        # Subscription has own redis
         self.sub_redis = None
         self.sub_channel = None
 
@@ -34,6 +47,9 @@ class RPCRedisCommLayer(AbstractRPCCommLayer):
         return self
 
     def __init__(self, subchannel, pubchannel):
+        """
+        Initialize and set the sub/pub channels
+        """
         self.subchannel = subchannel
         self.pubchannel = pubchannel
 
@@ -48,6 +64,11 @@ class RPCRedisCommLayer(AbstractRPCCommLayer):
             self.subscribed = True
 
     async def publish(self, rpc_instance: RPCBase, channel=None):
+        """
+        Publish redis implementation, publishes RPCBase instances.
+
+        :return: the number of receivers
+        """
         # rpc_instance should be a subclass of RPCBase
         # For now just check if instance of RPCBase
         assert isinstance(rpc_instance, RPCBase)
@@ -73,16 +94,18 @@ class RPCRedisCommLayer(AbstractRPCCommLayer):
             # this is stored in redis now
             rpc_instance.data = {'redis_key': redis_key}
 
+        # Override the pub_channel with channel, if set
         pub_channel = channel if channel is not None else self.pubchannel
 
-        # Publish rpc_instance
+        # Publish rpc_instance and return number of listeners
         return await self.redis.publish(
             pub_channel,
             self.serialization.dumpb(rpc_instance))
 
     async def get_data(self, redis_key, delete=True):
         """
-        Get data by redis_key
+        Helper function to get data by redis_key, by default
+        delete the data after retrieval.
         """
         data = self.serialization.loadb(
             await self.redis.get(redis_key))
@@ -91,6 +114,10 @@ class RPCRedisCommLayer(AbstractRPCCommLayer):
         return data
 
     async def _process_msg(self, msg, on_rpc_event_callback, channel=None):
+        """
+        Interal message processing, is called on every received
+        message via the subscription.
+        """
         event = self.serialization.loadb(msg)
 
         # rpc_instance should be a subclass of RPCBase
@@ -111,6 +138,12 @@ class RPCRedisCommLayer(AbstractRPCCommLayer):
                 event, channel=channel.name)
 
     async def subscribe(self, on_rpc_event_callback, channel=None, redis=None):
+        """
+        Redis implementation for subscribe method, receives messages from
+        subscription channel.
+
+        Note: does block in while loop until .unsubscribe() is called.
+        """
         try:
             if channel is None:
                 channel = self.sub_channel
@@ -126,17 +159,25 @@ class RPCRedisCommLayer(AbstractRPCCommLayer):
                     channel=channel)
 
         finally:
+            # Close connections and cleanup
             self.subscribed = False
             redis.close()
             await redis.wait_closed()
 
     async def unsubscribe(self):
+        """
+        Redis implementation for unsubscribe. Stops subscription and breaks
+        out of the while loop in .subscribe()
+        """
         if self.subscribed:
             await self.sub_redis.unsubscribe(
                 self.sub_channel.name)
             self.subscribed = False
 
     async def close(self):
+        """
+        Stop subscription & close everything
+        """
         await self.unsubscribe()
         self.redis.close()
         await self.redis.wait_closed()
