@@ -8,14 +8,14 @@ The Python package for the asyncio remote procedure calling
         :target: https://travis-ci.com/nens/asyncio-rpc/
 
 
-.. image:: https://readthedocs.org/projects/httpsgithubcomnensasyncio-rpc/badge/?version=latest
-        :target: https://httpsgithubcomnensasyncio-rpc.readthedocs.io/en/latest/?badge=latest
+.. image:: https://readthedocs.org/projects/asyncio-rpc/badge/?version=latest
+        :target: https://asyncio-rpc.readthedocs.io/en/latest/?badge=latest
         :alt: Documentation Status
 
 
 
 * Free software: BSD license
-* Documentation: https://httpsgithubcomnensasyncio-rpc.readthedocs.io.
+* Documentation: https://asyncio-rpc.readthedocs.io.
 
 
 Overview
