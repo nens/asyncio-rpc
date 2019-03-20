@@ -1,4 +1,4 @@
-0.1.0 (unreleased)
+0.1.0 (2019-03-20)
 ------------------
 
 - first pypi release
