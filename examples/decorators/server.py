@@ -8,6 +8,10 @@ from asyncio_rpc.serialization import msgpack as msgpack_serialization
 
 
 def rpc_method(func):
+    """
+    Server side decorator for methods
+    that need to be exposed via RPC.
+    """
     def rpc_method(*args, **kwargs):
         return func(*args, **kwargs)
     rpc_method._is_rpc_method = True

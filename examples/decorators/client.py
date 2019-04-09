@@ -7,7 +7,19 @@ from asyncio_rpc.commlayers.redis import RPCRedisCommLayer
 from asyncio_rpc.serialization import msgpack as msgpack_serialization
 
 
+# Note: This example only contains documentation for how
+# a decorator could be used for more basic documentation
+# see the basic example.
+
+
 def rpc_method(func):
+    """
+    Decorator function that can be used to decorate
+    (proxy) functions client side. It uses the same code as in
+    the basic example for executing the rpc call.
+
+    Note: it has drawbacks, see below under multiply.
+    """
     def rpc_method(self, *args, **kwargs):
         rpc_func_call = RPCCall(func.__name__, args, kwargs)
         rpc_func_stack = RPCStack(
@@ -30,15 +42,17 @@ class ServiceClient:
         The decorator takes care of sending the function
         name & params to the RPCServer
 
-        Note: this functions DOES return the RPC
-        call result although it does not seem it does.
+        Note:
+        A (big) drawback of the decorator is that wrapped function
+        do not seem to return anything. Think well
+        before applying it everywhere....
         """
 
     @rpc_method
     async def not_decorated_method(self, x, y):
         """
-        This method is not decorated server-side,
-        should not work..
+        This method is not decorated and therefore
+        should not trigger a RPC call
         """
 
 

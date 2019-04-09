@@ -9,6 +9,9 @@ from asyncio_rpc.serialization import msgpack as msgpack_serialization
 #  res = Service().integer.multiply(100, 100)
 
 class Integer:
+    """
+    Server side implementation for Integer multiplication
+    """
     def multiply(self, x, y):
         return x * y
 
@@ -16,6 +19,9 @@ class Integer:
 class Service:
     @property
     def integer(self):
+        """
+        Expose Integer via a property (just like the client side)
+        """
         return Integer()
 
 

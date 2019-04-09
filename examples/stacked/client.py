@@ -8,7 +8,14 @@ from asyncio_rpc.commlayers.redis import RPCRedisCommLayer
 from asyncio_rpc.serialization import msgpack as msgpack_serialization
 
 
+# Create a stacked object structure..
+#  res = service_client.integer.multiply(100, 100)
+
+
 class IntegerClient:
+    """
+    Proxy class that is exposed via the ServiceClient below.
+    """
 
     def __init__(self, client: RPCClient, namespace, stack: List[RPCCall]):
         self.client = client
@@ -40,6 +47,17 @@ class ServiceClient:
 
     @property
     def integer(self):
+        """
+        Instead of providing the multiply function directly it is now available
+        via the 'integer' property.
+
+        Note that an RPCCall with 'integer' is added to the RPCStack before
+        any functions on the IntegerClient are executed. This way
+        server-side first 'integer' is executed before 'multiply', allowing
+        to stack functions calls like:
+
+            res = service_client.integer.multiply(100, 100)
+        """
         return IntegerClient(
             self.client, self.namespace, [RPCCall('integer', (), {})])
 
@@ -53,6 +71,7 @@ async def main(args):
 
     service_client = ServiceClient(rpc_client, 'TEST')
 
+    # Execute the multiply on the integer
     result = await service_client.integer.multiply(100, 100)
 
     print(result)

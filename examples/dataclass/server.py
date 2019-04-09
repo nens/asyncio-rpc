@@ -7,6 +7,11 @@ from .models import Integer, MultiplyResult
 
 
 class Service:
+    """
+    Same service as the basic example, only now it uses
+    dataclasses as arguments and returns a dataclass with
+    the result.
+    """
     def multiply(self, x: Integer, y: Integer) -> MultiplyResult:
         return MultiplyResult(x.value * y.value)
 
@@ -23,7 +28,7 @@ async def main(args):
     executor = DefaultExecutor(
         namespace="TEST", instance=Service())
 
-    # Register models
+    # IMPORTANT: Register dataclasses to allow serialization/deserialization
     rpc_server.register_models([Integer, MultiplyResult])
 
     # Register executor

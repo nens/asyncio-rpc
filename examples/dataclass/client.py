@@ -8,6 +8,10 @@ from asyncio_rpc.serialization import msgpack as msgpack_serialization
 from .models import Integer, MultiplyResult
 
 
+# Note: This example only contains documentation for dataclasses,
+# for more basic documentation see the basic example.
+
+
 class ServiceClient:
     def __init__(self, client: RPCClient, namespace=None):
         assert namespace is not None
@@ -35,13 +39,16 @@ async def main(args):
 
     rpc_client = RPCClient(rpc_commlayer)
 
-    # Register Integer model
+    # Register dataclasses to allow serialized/deserialized
     rpc_client.register_models([Integer, MultiplyResult])
 
     service_client = ServiceClient(rpc_client, 'TEST')
 
+    # Now we can do the same thing as in the basic example only we can
+    # use dataclasses as function arguments.
     result = await service_client.multiply(Integer(100), Integer(100))
 
+    # And the result will also be a dataclass
     assert isinstance(result, MultiplyResult)
 
     print(result)
