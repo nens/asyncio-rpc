@@ -64,15 +64,19 @@ class RPCClient(object):
 
         return result
 
-    async def rpc_call(self, rpc_func_stack: RPCStack) -> RPCResult:
+    async def rpc_call(
+            self, rpc_func_stack: RPCStack, channel=None) -> RPCResult:
         """
         Execute the given rpc_func_stack (RPCStack) and either
         return a RPCResult or raise an exception based on the returned
         RPCException.
 
-        This function can be bot be called with awaiting client.serve() or
+        This function can both be called with awaiting client.serve() or
         without. The difference is, that in the first case client.serve()
         starts while loops for performing background processing.
+
+        The channel (optional) argument can be used to override
+        the default publish channel
         """
         assert isinstance(rpc_func_stack, RPCStack)
 
@@ -81,7 +85,7 @@ class RPCClient(object):
 
         # Publish RPCStack to RPCServer
         count = await self.rpc_commlayer.publish(
-            rpc_func_stack)
+            rpc_func_stack, channel=channel)
 
         # TODO: resent when no subscribers?
         assert count > 0
