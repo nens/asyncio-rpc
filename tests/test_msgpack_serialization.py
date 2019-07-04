@@ -18,6 +18,11 @@ def test_dict_serialization(serialize_deserialize):
     assert value == serialize_deserialize(value)
 
 
+def test_byte_and_str_serialization(serialize_deserialize):
+    value = {'1': b'2', b'10': '1.10'}
+    assert value == serialize_deserialize(value)
+
+
 def test_numpy_serialization(serialize_deserialize):
     value = np.arange(100, dtype=np.float64)
     assert np.all(value == serialize_deserialize(value))

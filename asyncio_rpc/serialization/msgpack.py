@@ -122,7 +122,7 @@ class DataclassHandler:
     def packb(cls, obj) -> bytes:
         dataclass_name = obj.__class__.__name__
         if isinstance(dataclass_name, str):
-            dataclass_name = dataclass_name.encode('utf-8')
+            dataclass_name = dataclass_name
 
         # Recursively process dataclasses of the dataclass,
         # serialize as tuple(dataclass_name, __dict__)
@@ -183,13 +183,15 @@ def do_nothing(x):
     return x
 
 
-def dumpb(instance: Any, do_compress=True, compress_func=lz4_compress):
+def dumpb(instance: Any, do_compress=True, compress_func=lz4_compress,
+          use_bin_type=True):
     """
     Dump/pack instance with msgpack to bytes
     """
     if not do_compress:
         compress_func = do_nothing
-    return compress_func(msgpack.packb(instance, default=default))
+    return compress_func(msgpack.packb(
+        instance, default=default, use_bin_type=use_bin_type))
 
 
 def loadb(packed: bytes, do_decompress=True, decompress_func=lz4_decompress,
