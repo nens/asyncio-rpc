@@ -1,7 +1,7 @@
 0.1.2 (unreleased)
 ------------------
 
-- Nothing changed yet.
+- Fixed bug with bytes/str serialization/deserialization
 
 
 0.1.1 (2019-04-29)
