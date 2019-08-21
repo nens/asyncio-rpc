@@ -1,4 +1,4 @@
-0.1.3 (unreleased)
+0.1.3 (2019-08-21)
 ------------------
 
 - Verbose feedback on assertion error while trying to unpack dataclasses.
