@@ -136,7 +136,8 @@ class DataclassHandler:
         classname, data = loadb(
             data, do_decompress=False, raw=False)
         # Return registered class or Serializable (as default)
-        assert classname in REGISTRY['serializables']
+        assert classname in REGISTRY['serializables'], \
+            f'class {classname} not yet registered'
         klass = REGISTRY['serializables'][classname]
         return klass(**data)
 

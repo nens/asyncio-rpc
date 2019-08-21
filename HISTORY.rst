@@ -1,7 +1,7 @@
 0.1.3 (unreleased)
 ------------------
 
-- Nothing changed yet.
+- Verbose feedback on assertion error while trying to unpack dataclasses.
 
 
 0.1.2 (2019-07-04)
