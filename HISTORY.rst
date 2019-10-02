@@ -1,7 +1,10 @@
 0.1.4 (unreleased)
 ------------------
 
-- Nothing changed yet.
+- Client now raises RPCTimeoutError if the result of a RPC call took to long to
+  be received.
+
+- Client.serve() method respawns internal tasks on errors.
 
 
 0.1.3 (2019-08-21)
