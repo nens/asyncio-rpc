@@ -1,4 +1,4 @@
-0.1.4 (unreleased)
+0.1.4 (2019-10-03)
 ------------------
 
 - Client now raises RPCTimeoutError if the result of a RPC call took to long to
