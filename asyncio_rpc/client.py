@@ -1,8 +1,12 @@
 import asyncio
 import builtins
+import logging
 from typing import Union, List
 from .models import RPCMessage, RPCResult, RPCException, RPCStack, RPCBase
 from asyncio_rpc.commlayers.base import AbstractRPCCommLayer
+
+
+logger = logging.getLogger("asyncio-rpc-client")
 
 
 class WrappedException(Exception):
@@ -10,6 +14,13 @@ class WrappedException(Exception):
     Exception raised when an exception raised
     by RPC call could not be resolved, the innermessage
     shows the exception raised on the RPC server.
+    """
+
+
+class RPCTimeoutError(Exception):
+    """
+    Timeouterror raised by RPC client if result
+    took to long.
     """
 
 
@@ -88,13 +99,12 @@ class RPCClient(object):
             rpc_func_stack, channel=channel)
 
         # TODO: resent when no subscribers?
-        assert count > 0
+        assert count > 0,\
+            f"rpc_call was not received by any subscriber {rpc_func_stack}"
 
         if self.processing:
             # client.serve() has been awaited, so
             # background processing is taken care of.
-
-            # TODO: catch timeout exception
 
             # Create a future that should be resolved within
             # the given timeout. The background processing initialized
@@ -102,19 +112,23 @@ class RPCClient(object):
             # is returned.
             future = asyncio.get_event_loop().create_future()
             self.futures[rpc_func_stack.uid] = future
-            result = await asyncio.wait_for(
-                future, timeout=rpc_func_stack.timeout)
+            try:
+                result = await asyncio.wait_for(
+                    future, timeout=rpc_func_stack.timeout)
+            except asyncio.TimeoutError:
+                raise RPCTimeoutError(f"rpc_func_stack: {rpc_func_stack}")
         else:
             # No background processing, so start the subscription
             # and wait for result via asyncio.gather
             # _wait_for_result is a helper function to unsubscribe
             # on a result.
-
-            # TODO: catch timeout exception
-            _, result = await asyncio.gather(
-                self.rpc_commlayer.subscribe(self._on_rpc_event),
-                self._wait_for_result(rpc_func_stack.uid)
-            )
+            try:
+                _, result = await asyncio.gather(
+                    self.rpc_commlayer.subscribe(self._on_rpc_event),
+                    self._wait_for_result(rpc_func_stack.uid)
+                )
+            except asyncio.TimeoutError:
+                raise RPCTimeoutError(f"rpc_func_stack: {rpc_func_stack}")
 
         if isinstance(result, RPCException):
             # Try to resolve builtin errors
@@ -191,6 +205,31 @@ class RPCClient(object):
         background processing and allowing multiple
         rpc_calls asynchroniously.
         """
-        await asyncio.gather(
-            self.rpc_commlayer.subscribe(self._on_rpc_event),
-            self._process_queue(on_rpc_message))
+
+        task_args_map = {
+            self.rpc_commlayer.subscribe: [self._on_rpc_event],
+            self._process_queue: [on_rpc_message]
+        }
+        # create the main tasks
+        main_tasks = {
+            asyncio.ensure_future(coro(*args)): (coro, args)
+            for coro, args in task_args_map.items()
+        }
+
+        running = set(main_tasks.keys())
+
+        except_cnt = -1
+
+        while running:
+            except_cnt += 1
+            finished, running = await asyncio.wait(
+                running, return_when=asyncio.FIRST_EXCEPTION
+            )
+            for task in finished:
+                if task.exception():
+                    logger.exception(task.exception())
+                    task.print_stack()
+                    coro, args = main_tasks[task]
+                    new_task = asyncio.ensure_future(coro(*args))
+                    main_tasks[new_task] = (coro, args)
+                    running.add(new_task)
