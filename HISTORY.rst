@@ -1,4 +1,4 @@
-0.1.5 (unreleased)
+0.1.5 (2019-12-23)
 ------------------
 
 - Server.serve() methode respawns on internal tasks errors
