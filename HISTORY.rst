@@ -1,7 +1,9 @@
 0.1.5 (unreleased)
 ------------------
 
-- Nothing changed yet.
+- Server.serve() methode respawns on internal tasks errors
+
+- Better error handling in server.
 
 
 0.1.4 (2019-10-03)
