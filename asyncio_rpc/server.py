@@ -135,11 +135,6 @@ class RPCServer(object):
         Starts RPCServer background processing, blocks
         until self.rpc_commlayer.unsubscribe() is called.
         """
-        # await asyncio.gather(
-        #    self.rpc_commlayer.subscribe(self._on_rpc_event),
-        #    self._process_queue()
-        # )
-
         task_args_map = {
             self.rpc_commlayer.subscribe: [self._on_rpc_event],
             self._process_queue: []
