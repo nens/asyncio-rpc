@@ -1,7 +1,10 @@
 import asyncio
+import logging
 from typing import List
 from asyncio_rpc.models import RPCStack, RPCResult, RPCException, RPCCall
 from asyncio_rpc.commlayers.base import AbstractRPCCommLayer
+
+logger = logging.getLogger("asyncio-rpc-server")
 
 
 class NamespaceError(Exception):
@@ -111,8 +114,15 @@ class RPCServer(object):
             rpc_func_stack, channel = item
             assert isinstance(rpc_func_stack, RPCStack)
 
-            # Process rpc_func_call_stack
-            result = await self.rpc_call(rpc_func_stack)
+            try:
+                # Process rpc_func_call_stack
+                result = await self.rpc_call(rpc_func_stack)
+            except Exception as e:
+                result = RPCException(
+                    uid=rpc_func_stack.uid,
+                    namespace=rpc_func_stack.namespace,
+                    classname=e.__class__.__name__,
+                    exc_args=e.args)
 
             # Publish result of rpc call
             await self.rpc_commlayer.publish(
@@ -125,10 +135,39 @@ class RPCServer(object):
         Starts RPCServer background processing, blocks
         until self.rpc_commlayer.unsubscribe() is called.
         """
-        await asyncio.gather(
-            self.rpc_commlayer.subscribe(self._on_rpc_event),
-            self._process_queue()
-        )
+        # await asyncio.gather(
+        #    self.rpc_commlayer.subscribe(self._on_rpc_event),
+        #    self._process_queue()
+        # )
+
+        task_args_map = {
+            self.rpc_commlayer.subscribe: [self._on_rpc_event],
+            self._process_queue: []
+        }
+
+        # create the main tasks
+        main_tasks = {
+            asyncio.ensure_future(coro(*args)): (coro, args)
+            for coro, args in task_args_map.items()
+        }
+
+        running = set(main_tasks.keys())
+
+        except_cnt = -1
+
+        while running:
+            except_cnt += 1
+            finished, running = await asyncio.wait(
+                running, return_when=asyncio.FIRST_EXCEPTION
+            )
+            for task in finished:
+                if task.exception():
+                    logger.exception(task.exception())
+                    task.print_stack()
+                    coro, args = main_tasks[task]
+                    new_task = asyncio.ensure_future(coro(*args))
+                    main_tasks[new_task] = (coro, args)
+                    running.add(new_task)
 
 
 class DefaultExecutor:
