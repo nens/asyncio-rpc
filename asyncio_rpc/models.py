@@ -62,6 +62,18 @@ class RPCStack(RPCBase):
 
 
 @dataclass
+class RPCSubStack(RPCStack):
+    """
+    Same as RPCStack, but no for subscribing to a generator
+    """
+
+@dataclass
+class RPCUnSubStack(RPCStack):
+    """
+    Unsubscribe call 
+    """
+
+@dataclass
 class RPCResult(RPCBase):
     """
     Represents the result of a remote procedure call (RPCStack)
@@ -73,6 +85,13 @@ class RPCResult(RPCBase):
     uid: str
     namespace: str
     data: Any
+
+
+@dataclass
+class RPCPubResult(RPCResult):
+    """
+    Same as RPCResult, but now for publications
+    """     
 
 
 @dataclass
@@ -98,6 +117,9 @@ SERIALIZABLE_MODELS = (
     RPCMessage,
     RPCCall,
     RPCStack,
+    RPCSubStack,
+    RPCUnSubStack,
     RPCResult,
-    RPCException
+    RPCPubResult,
+    RPCException,
 )
