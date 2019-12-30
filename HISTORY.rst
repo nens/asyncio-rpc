@@ -1,4 +1,4 @@
-0.1.6 (unreleased)
+0.1.6 (2019-12-30)
 ------------------
 
 - Added pub/sub support to allow sending continuous updates
