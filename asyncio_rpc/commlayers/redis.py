@@ -1,3 +1,4 @@
+from uuid import uuid4
 from .base import AbstractRPCCommLayer
 from aioredis import create_redis
 from ..models import RPCStack, RPCResult, RPCBase, SERIALIZABLE_MODELS
@@ -81,8 +82,7 @@ class RPCRedisCommLayer(AbstractRPCCommLayer):
             # Customized:
             # result data via redis.set
             # result without data via redis.publish
-            redis_key = self.subchannel + b'_' +\
-                rpc_instance.uid.encode('utf-8')
+            redis_key = uuid4().hex
 
             # Store the result data via key/value in redis
             await self.redis.set(

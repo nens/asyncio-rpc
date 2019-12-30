@@ -2,26 +2,13 @@ import asyncio
 import builtins
 import logging
 from typing import Union, List
-from .models import RPCMessage, RPCResult, RPCException, RPCStack, RPCBase
+from .models import (
+    RPCMessage, RPCResult, RPCException, RPCStack, RPCBase, RPCSubStack)
 from asyncio_rpc.commlayers.base import AbstractRPCCommLayer
-
+from asyncio_rpc.pubsub import Subscription
+from asyncio_rpc.exceptions import RPCTimeoutError, WrappedException
 
 logger = logging.getLogger("asyncio-rpc-client")
-
-
-class WrappedException(Exception):
-    """
-    Exception raised when an exception raised
-    by RPC call could not be resolved, the innermessage
-    shows the exception raised on the RPC server.
-    """
-
-
-class RPCTimeoutError(Exception):
-    """
-    Timeouterror raised by RPC client if result
-    took to long.
-    """
 
 
 class RPCClient(object):
@@ -41,6 +28,7 @@ class RPCClient(object):
         self.queue = asyncio.Queue()
         self.processing = False
         self.on_rpc_message = None
+        self.subscriptions = {}
 
     def register_models(self, models: List):
         """
@@ -74,6 +62,30 @@ class RPCClient(object):
         await self.rpc_commlayer.unsubscribe()
 
         return result
+
+    async def subscribe_call(
+            self, rpc_sub_stack: RPCSubStack, channel=None) -> Subscription:
+        assert isinstance(rpc_sub_stack, RPCStack)
+
+        if not self.processing:
+            pass
+
+        # Make sure to be subscribed before publishing
+        await self.rpc_commlayer.do_subscribe()
+
+        subscription = Subscription(self, rpc_sub_stack)
+
+        self.subscriptions[rpc_sub_stack.uid] = subscription
+
+        # Publish RPCStack to RPCServer
+        count = await self.rpc_commlayer.publish(
+            rpc_sub_stack, channel=channel)
+
+        # TODO: resent when no subscribers?
+        assert count > 0,\
+            f"subscribe_call was not received by any server: {rpc_sub_stack}"
+
+        return subscription
 
     async def rpc_call(
             self, rpc_func_stack: RPCStack, channel=None) -> RPCResult:
@@ -171,7 +183,6 @@ class RPCClient(object):
                 break
 
             event, channel = item
-
             # The event can either be a:
             # 1) RPCResult or RPCException as a result from the RPCServer
             # 3) RPCMessage as a message from the RPCServer
@@ -187,6 +198,9 @@ class RPCClient(object):
                     future = self.futures.pop(event.uid)
                     if future is not None:
                         future.set_result(event)
+                elif event.uid in self.subscriptions:
+                    subscription = self.subscriptions[event.uid]
+                    await subscription.enqueue(event)
                 else:
                     # FUTURE NOT FOUND FOR EVENT
                     # TODO: how to handle this??

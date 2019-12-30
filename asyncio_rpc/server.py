@@ -1,9 +1,11 @@
 import asyncio
 import logging
 from typing import List
-from asyncio_rpc.models import RPCStack, RPCResult, RPCException, RPCCall
+from asyncio_rpc.models import (
+    RPCStack, RPCResult, RPCException, RPCCall,
+    RPCSubStack, RPCUnSubStack)
 from asyncio_rpc.commlayers.base import AbstractRPCCommLayer
-
+from asyncio_rpc.pubsub import Publisher
 logger = logging.getLogger("asyncio-rpc-server")
 
 
@@ -27,6 +29,7 @@ class RPCServer(object):
         # Allow multiple executors to be registered by
         # namespace
         self.registry = {}
+        self.publishers = {}
         self.rpc_commlayer = rpc_commlayer
 
     def register_models(self, models):
@@ -87,6 +90,24 @@ class RPCServer(object):
 
         return result
 
+    async def subscribe_call(self, rpc_sub_stack: RPCSubStack):
+        assert isinstance(rpc_sub_stack, RPCSubStack)
+        if rpc_sub_stack.namespace not in self.registry:
+            raise NamespaceError("Unknown namespace")
+
+        executor = self.registry[rpc_sub_stack.namespace]
+        if not hasattr(executor, 'subscribe_call'):
+            raise NotImplementedError(
+                f"Executor for namespace: {rpc_sub_stack.namespace} has "
+                f"no subscribe_call function")
+
+        publisher = Publisher(self, rpc_sub_stack)
+        self.publishers[rpc_sub_stack.uid] = publisher
+
+        # Create task for this publisher
+        asyncio.create_task(
+            executor.subscribe_call(publisher))
+
     async def _on_rpc_event(
             self, rpc_func_stack: RPCStack, channel: bytes = None):
         """
@@ -112,25 +133,43 @@ class RPCServer(object):
                 break
 
             rpc_func_stack, channel = item
+
             assert isinstance(rpc_func_stack, RPCStack)
 
-            try:
-                # Process rpc_func_call_stack
-                result = await self.rpc_call(rpc_func_stack)
+            if isinstance(rpc_func_stack, RPCSubStack):
+                try:
+                    # Process rpc_func_call_stack
+                    await self.subscribe_call(rpc_func_stack)
+                except Exception as e:
+                    result = RPCException(
+                        uid=rpc_func_stack.uid,
+                        namespace=rpc_func_stack.namespace,
+                        classname=e.__class__.__name__,
+                        exc_args=e.args)
+                    # Publish exception
+                    await self.rpc_commlayer.publish(
+                        result, channel=rpc_func_stack.respond_to)
+            elif isinstance(rpc_func_stack, RPCUnSubStack):
+                publisher = self.publishers.pop(rpc_func_stack.uid, None)
+                if publisher is not None:
+                    publisher.set_is_active(False)
+            else:
+                try:
+                    # Process rpc_func_call_stack
+                    result = await self.rpc_call(rpc_func_stack)
+                    # Publish result of rpc call
+                    await self.rpc_commlayer.publish(
+                        result, channel=rpc_func_stack.respond_to)
 
-                # Publish result of rpc call
-                await self.rpc_commlayer.publish(
-                    result, channel=rpc_func_stack.respond_to)
-            except Exception as e:
-                result = RPCException(
-                    uid=rpc_func_stack.uid,
-                    namespace=rpc_func_stack.namespace,
-                    classname=e.__class__.__name__,
-                    exc_args=e.args)
-
-                # Try to publish error
-                await self.rpc_commlayer.publish(
-                    result, channel=rpc_func_stack.respond_to)
+                except Exception as e:
+                    result = RPCException(
+                        uid=rpc_func_stack.uid,
+                        namespace=rpc_func_stack.namespace,
+                        classname=e.__class__.__name__,
+                        exc_args=e.args)
+                    # Try to publish error
+                    await self.rpc_commlayer.publish(
+                        result, channel=rpc_func_stack.respond_to)
 
     async def serve(self):
         """
@@ -179,6 +218,14 @@ class DefaultExecutor:
         assert instance is not None
         self.namespace = namespace
         self.instance = instance
+
+    async def subscribe_call(self, publisher: Publisher):
+        """
+        Use the Publisher to publish results to the client
+        """
+        # if publisher.is_active:
+        #     await publisher.publish(b'blaat')
+        pass
 
     async def rpc_call(self, stack: List[RPCCall] = []):
         """
