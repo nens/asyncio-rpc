@@ -41,6 +41,11 @@ def test_none_deserialization():
     assert msgpack_serialization.loadb(None) is None
 
 
+def test_slice_serialization(serialize_deserialize):
+    value = slice(1, 2, 3)
+    assert value == serialize_deserialize(value)
+
+
 @dataclass
 class DataclassTest:
     uid: int

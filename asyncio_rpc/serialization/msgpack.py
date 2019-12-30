@@ -142,10 +142,27 @@ class DataclassHandler:
         return klass(**data)
 
 
+class SliceHandler:
+    """
+    Serialize slices
+    """
+    ext_type = 5
+    obj_type = slice
+
+    @classmethod
+    def packb(cls, obj) -> bytes:
+        return dumpb((obj.start, obj.stop, obj.step))
+
+    @classmethod
+    def unpackb(cls, data):
+        return slice(*loadb(data))
+
+
 # Register custom handlers
 register(NumpyArrayHandler)
 register(NumpyStructuredArrayHandler)
 register(DatetimeHandler)
+register(SliceHandler)
 
 
 def default(obj: Any):

@@ -1,7 +1,10 @@
 0.1.6 (unreleased)
 ------------------
 
-- Nothing changed yet.
+- Added pub/sub support to allow sending continuous updates
+  from the server for a client subscription
+
+- Add slice serialization/deserialization support
 
 
 0.1.5 (2019-12-23)
