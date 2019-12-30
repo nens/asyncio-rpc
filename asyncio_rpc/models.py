@@ -67,11 +67,13 @@ class RPCSubStack(RPCStack):
     Same as RPCStack, but no for subscribing to a generator
     """
 
+
 @dataclass
 class RPCUnSubStack(RPCStack):
     """
-    Unsubscribe call 
+    Unsubscribe call
     """
+
 
 @dataclass
 class RPCResult(RPCBase):
@@ -91,7 +93,7 @@ class RPCResult(RPCBase):
 class RPCPubResult(RPCResult):
     """
     Same as RPCResult, but now for publications
-    """     
+    """
 
 
 @dataclass
@@ -107,7 +109,7 @@ class RPCException(RPCBase):
     """
     uid: str
     namespace: str
-    classname: str
+    classname: str # noqa
     exc_args: List
 
 

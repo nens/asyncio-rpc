@@ -1,8 +1,9 @@
 import asyncio
 import builtins
 from typing import Any, AsyncIterator
-from asyncio_rpc.models import RPCStack, RPCPubResult, RPCException, RPCUnSubStack
-from asyncio_rpc.exceptions import WrappedException, SubscriptionClosed
+from asyncio_rpc.models import (
+    RPCStack, RPCPubResult, RPCException, RPCUnSubStack)
+from asyncio_rpc.exceptions import WrappedException
 
 
 class Publisher:
@@ -27,7 +28,7 @@ class Publisher:
         Publish data to the client
         """
         if not self.is_active:
-            raise SubscriptionClosed()
+            return 0
 
         # Publish the data as partial data
         publication = RPCPubResult(
@@ -38,8 +39,10 @@ class Publisher:
         if receiver_count == 0:
             self._is_active = False
             self._server.publishers.pop(self._rpc_stack.uid, None)
-            raise SubscriptionClosed()
-        
+            return 0
+
+        return receiver_count
+
     def __del__(self):
         self._server.publishers.pop(self._rpc_stack.uid, None)
 
@@ -55,10 +58,10 @@ class Subscription:
 
     async def close(self):
         self._client.subscriptions.pop(self._rpc_stack.uid, None)
-        
+
         rpc_unsub_stack = RPCUnSubStack(
             self._rpc_stack.uid, self._rpc_stack.namespace,
-            300, [None])   
+            300, [None])
 
         # Publish to RPCServer
         await self._client.rpc_commlayer.publish(
@@ -66,16 +69,15 @@ class Subscription:
 
         self.queue._queue.clear()
         self.queue._finished.set()
-        self.queue._unfinished_tasks = 0        
+        self.queue._unfinished_tasks = 0
         await self.queue.put(b'STOP')
-     
 
     async def enumerate(self) -> AsyncIterator[Any]:
         while True:
             result = await self.queue.get()
             if result == b'STOP':
                 break
-            
+
             if isinstance(result, RPCException):
                 # Try to resolve builtin errors
                 try:
@@ -90,4 +92,5 @@ class Subscription:
             yield result.data
 
     def __del__(self):
-        self._client.subscriptions.pop(self._rpc_stack.uid, None)
+        self._client.subscriptions.pop(
+            self._rpc_stack.uid, None)

@@ -12,6 +12,7 @@ class RPCTimeoutError(Exception):
     took to long.
     """
 
+
 class SubscriptionClosed(Exception):
     """
     Raised when the subscription has already been closed

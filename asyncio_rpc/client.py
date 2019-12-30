@@ -63,8 +63,8 @@ class RPCClient(object):
 
         return result
 
-
-    async def subscribe_call(self, rpc_sub_stack: RPCSubStack, channel=None) -> Subscription:
+    async def subscribe_call(
+            self, rpc_sub_stack: RPCSubStack, channel=None) -> Subscription:
         assert isinstance(rpc_sub_stack, RPCStack)
 
         if not self.processing:
@@ -83,7 +83,7 @@ class RPCClient(object):
 
         # TODO: resent when no subscribers?
         assert count > 0,\
-            f"subscribe_call was not received by any server: {rpc_sub_stack}"            
+            f"subscribe_call was not received by any server: {rpc_sub_stack}"
 
         return subscription
 

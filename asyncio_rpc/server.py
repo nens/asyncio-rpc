@@ -3,7 +3,7 @@ import logging
 from typing import List
 from asyncio_rpc.models import (
     RPCStack, RPCResult, RPCException, RPCCall,
-    RPCSubStack, RPCPubResult, RPCUnSubStack)
+    RPCSubStack, RPCUnSubStack)
 from asyncio_rpc.commlayers.base import AbstractRPCCommLayer
 from asyncio_rpc.pubsub import Publisher
 logger = logging.getLogger("asyncio-rpc-server")
@@ -104,7 +104,9 @@ class RPCServer(object):
         publisher = Publisher(self, rpc_sub_stack)
         self.publishers[rpc_sub_stack.uid] = publisher
 
-        await executor.subscribe_call(publisher)
+        # Create task for this publisher
+        asyncio.create_task(
+            executor.subscribe_call(publisher))
 
     async def _on_rpc_event(
             self, rpc_func_stack: RPCStack, channel: bytes = None):
@@ -131,7 +133,7 @@ class RPCServer(object):
                 break
 
             rpc_func_stack, channel = item
-            print('receive', item)
+            
             assert isinstance(rpc_func_stack, RPCStack)
 
             if isinstance(rpc_func_stack, RPCSubStack):
@@ -155,16 +157,19 @@ class RPCServer(object):
                 try:
                     # Process rpc_func_call_stack
                     result = await self.rpc_call(rpc_func_stack)
+                    # Publish result of rpc call
+                    await self.rpc_commlayer.publish(
+                        result, channel=rpc_func_stack.respond_to)
+
                 except Exception as e:
                     result = RPCException(
                         uid=rpc_func_stack.uid,
                         namespace=rpc_func_stack.namespace,
                         classname=e.__class__.__name__,
                         exc_args=e.args)
-
-                # Publish result of rpc call
-                await self.rpc_commlayer.publish(
-                    result, channel=rpc_func_stack.respond_to)
+                    # Try to publish error
+                    await self.rpc_commlayer.publish(
+                        result, channel=rpc_func_stack.respond_to)
 
     async def serve(self):
         """

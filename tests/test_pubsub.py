@@ -1,15 +1,13 @@
 import pytest
 import asyncio
-from dataclasses import dataclass
 from uuid import uuid4
 from asyncio_rpc.server import RPCServer
 from asyncio_rpc.client import RPCClient
 
-from asyncio_rpc.models import RPCCall, RPCStack, RPCSubStack
-from asyncio_rpc.client import WrappedException
-from asyncio_rpc.server import DefaultExecutor
+from asyncio_rpc.models import RPCCall, RPCSubStack
 from .utils import rpc_commlayer
 from asyncio_rpc.pubsub import Publisher
+
 
 class Executor:
     """
@@ -24,21 +22,21 @@ class Executor:
         """
         Use the Publisher to publish results to the client
         """
-        # if publisher.is_active:
-        #     await publisher.publish(b'blaat')
-        
         for i in range(0, 20):
             if publisher.is_active:
-                print('publishing', i)
                 await publisher.publish(i)
-        await asyncio.sleep(5)
         for i in range(0, 20):
-            print('pub2', i, publisher.is_active)
-            await publisher.publish(i)       
-        
+            if not publisher.is_active:
+                break
+            await publisher.publish(i)
 
+        # Clean-up
+        rpc_server = publisher._server
+        await rpc_server.queue.put(b'END')
+        await rpc_server.rpc_commlayer.unsubscribe()
+        
     async def rpc_call(self, rpc_stack):
-        print('RPC', rpc_stack)
+        pass
 
 
 @pytest.mark.asyncio
@@ -60,18 +58,18 @@ async def test_pubsub():
 
         async for item in subscriber.enumerate():
             if item > 5:
-                print('breaking', item)
-                break
-        print('deleting')
-        await subscriber.close()
+                await subscriber.close()
+
+        # Clean-up
+        await rpc_client.queue.put(b'END')
+        await rpc_client.rpc_commlayer.unsubscribe()
 
     funcs = [
         rpc_server.serve(),
         rpc_client.serve(),
-        process_subscriber(rpc_func_stack)
+        process_subscriber(rpc_func_stack),
     ]
     await asyncio.gather(*funcs)
 
     await rpc_client.rpc_commlayer.close()
     await rpc_server.rpc_commlayer.close()
-
