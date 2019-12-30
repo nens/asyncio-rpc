@@ -117,6 +117,10 @@ class RPCServer(object):
             try:
                 # Process rpc_func_call_stack
                 result = await self.rpc_call(rpc_func_stack)
+
+                # Publish result of rpc call
+                await self.rpc_commlayer.publish(
+                    result, channel=rpc_func_stack.respond_to)
             except Exception as e:
                 result = RPCException(
                     uid=rpc_func_stack.uid,
@@ -124,9 +128,9 @@ class RPCServer(object):
                     classname=e.__class__.__name__,
                     exc_args=e.args)
 
-            # Publish result of rpc call
-            await self.rpc_commlayer.publish(
-                result, channel=rpc_func_stack.respond_to)
+                # Try to publish error
+                await self.rpc_commlayer.publish(
+                    result, channel=rpc_func_stack.respond_to)
 
     async def serve(self):
         """
