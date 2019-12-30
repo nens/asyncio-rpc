@@ -7,7 +7,7 @@ from asyncio_rpc.exceptions import WrappedException
 
 
 class Publisher:
-    def __init__(self, server: 'RPCServer', rpc_stack: RPCStack):
+    def __init__(self, server, rpc_stack: RPCStack):
         self._rpc_stack = rpc_stack
         self._server = server
         self._is_active = True
@@ -48,7 +48,7 @@ class Publisher:
 
 
 class Subscription:
-    def __init__(self, client: 'Client', rpc_stack: RPCStack):
+    def __init__(self, client, rpc_stack: RPCStack):
         self.queue = asyncio.Queue()
         self._client = client
         self._rpc_stack = rpc_stack

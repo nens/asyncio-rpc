@@ -34,7 +34,7 @@ class Executor:
         rpc_server = publisher._server
         await rpc_server.queue.put(b'END')
         await rpc_server.rpc_commlayer.unsubscribe()
-        
+
     async def rpc_call(self, rpc_stack):
         pass
 

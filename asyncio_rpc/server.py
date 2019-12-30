@@ -133,7 +133,7 @@ class RPCServer(object):
                 break
 
             rpc_func_stack, channel = item
-            
+
             assert isinstance(rpc_func_stack, RPCStack)
 
             if isinstance(rpc_func_stack, RPCSubStack):
