@@ -1,4 +1,4 @@
-0.1.7 (unreleased)
+0.1.7 (2020-01-10)
 ------------------
 
 - When a message from the client has not been received by 
