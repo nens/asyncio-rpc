@@ -1,7 +1,9 @@
 0.1.7 (unreleased)
 ------------------
 
-- Nothing changed yet.
+- When a message from the client has not been received by 
+  a server it raises a NotReceived exception instead of
+  an assert error.
 
 
 0.1.6 (2019-12-30)

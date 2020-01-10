@@ -6,7 +6,7 @@ from .models import (
     RPCMessage, RPCResult, RPCException, RPCStack, RPCBase, RPCSubStack)
 from asyncio_rpc.commlayers.base import AbstractRPCCommLayer
 from asyncio_rpc.pubsub import Subscription
-from asyncio_rpc.exceptions import RPCTimeoutError, WrappedException
+from asyncio_rpc.exceptions import RPCTimeoutError, WrappedException, NotReceived
 
 logger = logging.getLogger("asyncio-rpc-client")
 
@@ -81,9 +81,9 @@ class RPCClient(object):
         count = await self.rpc_commlayer.publish(
             rpc_sub_stack, channel=channel)
 
-        # TODO: resent when no subscribers?
-        assert count > 0,\
-            f"subscribe_call was not received by any server: {rpc_sub_stack}"
+        if count == 0:
+            raise NotReceived(
+                f"subscribe_call was not received by any server: {rpc_sub_stack}")
 
         return subscription
 
@@ -110,9 +110,9 @@ class RPCClient(object):
         count = await self.rpc_commlayer.publish(
             rpc_func_stack, channel=channel)
 
-        # TODO: resent when no subscribers?
-        assert count > 0,\
-            f"rpc_call was not received by any subscriber {rpc_func_stack}"
+        if count == 0:
+            raise NotReceived(
+                f"rpc_call was not received by any subscriber {rpc_func_stack}")
 
         if self.processing:
             # client.serve() has been awaited, so
