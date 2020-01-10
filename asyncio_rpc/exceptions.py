@@ -3,6 +3,7 @@ class NotReceived(Exception):
     Message has not been recieved by anyone
     """
 
+
 class WrappedException(Exception):
     """
     Exception raised when an exception raised
