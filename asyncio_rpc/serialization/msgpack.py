@@ -20,6 +20,10 @@ REGISTRY = {'obj_types': {},
             'serializables': {}}
 
 
+class DtypeNotSupported(Exception):
+    pass
+
+
 def register(obj_def):
     """
     Register dataclasses or custom handlers in the registry.
@@ -66,27 +70,45 @@ class AbstractHandler(ABC):
 
 class NumpyArrayHandler(AbstractHandler):
     """
-    Use np.save and np.load to serialize/deserialize
+    Use dictionairies to serialize/deserialize
     numpy array's.
+
     """
     ext_type = 1
     obj_type = np.ndarray
 
-    # Note:
-    # More generic approach, but a bit slower than
-    # packing it as a list/tuple with (dtype, shape, bytes)
+    # Note: numpy save/load file approach
+    # is a bit harder with other programming
+    # languages. So use dictionaires instead.
+    #
+    # Note2: Currently you cannot pack/unpack
+    # array's with dtype=object
     @classmethod
     def packb(cls, array: np.ndarray) -> bytes:
-        buf = BytesIO()
-        np.save(buf, array)
-        buf.seek(0)
-        return buf.read()
+        if str(array.dtype) == 'object':
+            raise DtypeNotSupported(
+                "Numpy dtype: %s is not supported" % array.dtype)
+
+        return dumpb({
+            'shape': array.shape,
+            'dtype': str(array.dtype),
+            'fortran_order': np.isfortran(array),
+            'data': array.tobytes()
+        }, do_compress=False)
 
     @classmethod
     def unpackb(cls, data: bytes) -> np.ndarray:
-        buf = BytesIO(data)
-        buf.seek(0)
-        return np.load(buf)
+        data = loadb(data, do_decompress=False)
+        if data['dtype'] == 'object':
+            raise DtypeNotSupported(
+                "Numpy dtype: %s is not supported" % data['dtype'])
+        res = np.frombuffer(
+            data['data'], dtype=data['dtype']).reshape(
+            data['shape']
+        )
+        if data['fortran_order']:
+            res = np.asfortranarray(res)
+        return res
 
 
 class NumpyStructuredArrayHandler(NumpyArrayHandler):
