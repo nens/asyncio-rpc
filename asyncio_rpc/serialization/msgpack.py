@@ -2,7 +2,6 @@ import dataclasses
 import msgpack
 import numpy as np
 from abc import ABC, abstractmethod
-from io import BytesIO
 from datetime import datetime
 from lz4.frame import compress as lz4_compress, decompress as lz4_decompress
 from typing import Any
