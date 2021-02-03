@@ -158,7 +158,7 @@ class SliceHandler:
         return slice(*loadb(data))
 
 
-class NumpyInt32(AbstractHandler):
+class NumpyInt32Handler(AbstractHandler):
     """
     Serialize np.int32
     """
@@ -175,7 +175,7 @@ class NumpyInt32(AbstractHandler):
         return np.frombuffer(data, dtype=np.int32)[0]
 
 
-class NumpyInt64(AbstractHandler):
+class NumpyInt64Handler(AbstractHandler):
     """
     Serialize np.int64
     """
@@ -197,8 +197,8 @@ register(NumpyArrayHandler)
 register(NumpyStructuredArrayHandler)
 register(DatetimeHandler)
 register(SliceHandler)
-register(NumpyInt32)
-register(NumpyInt64)
+register(NumpyInt32Handler)
+register(NumpyInt64Handler)
 
 
 def default(obj: Any):
