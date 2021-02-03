@@ -46,6 +46,20 @@ def test_slice_serialization(serialize_deserialize):
     assert value == serialize_deserialize(value)
 
 
+def test_numpy_int32_serialization(serialize_deserialize):
+    value = np.int32(123)
+    deserialized = serialize_deserialize(value)
+    assert value == deserialized
+    assert type(value) == type(deserialized)
+
+
+def test_numpy_int64_serialization(serialize_deserialize):
+    value = np.int64(123)
+    deserialized = serialize_deserialize(value)
+    assert value == deserialized
+    assert type(value) == type(deserialized)
+
+
 @dataclass
 class DataclassTest:
     uid: int

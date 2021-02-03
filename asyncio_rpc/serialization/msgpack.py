@@ -158,11 +158,47 @@ class SliceHandler:
         return slice(*loadb(data))
 
 
+class NumpyInt32(AbstractHandler):
+    """
+    Serialize np.int32
+    """
+
+    ext_type = 6
+    obj_type = np.int32
+
+    @classmethod
+    def packb(cls, data: np.int32) -> bytes:
+        return data.tobytes()
+
+    @classmethod
+    def unpackb(cls, data: bytes) -> np.int32:
+        return np.frombuffer(data, dtype=np.int32)[0]
+
+
+class NumpyInt64(AbstractHandler):
+    """
+    Serialize np.int64
+    """
+
+    ext_type = 7
+    obj_type = np.int64
+
+    @classmethod
+    def packb(cls, data: np.int64) -> bytes:
+        return data.tobytes()
+
+    @classmethod
+    def unpackb(cls, data: bytes) -> np.int64:
+        return np.frombuffer(data, dtype=np.int64)[0]
+
+
 # Register custom handlers
 register(NumpyArrayHandler)
 register(NumpyStructuredArrayHandler)
 register(DatetimeHandler)
 register(SliceHandler)
+register(NumpyInt32)
+register(NumpyInt64)
 
 
 def default(obj: Any):
