@@ -1,4 +1,4 @@
-0.1.8 (unreleased)
+0.1.8 (2021-02-05)
 ------------------
 
 - Add numpy int32 and int64 serializer.
