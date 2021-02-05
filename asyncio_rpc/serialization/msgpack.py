@@ -1,4 +1,5 @@
 import dataclasses
+from pydantic import BaseModel
 import msgpack
 import numpy as np
 from abc import ABC, abstractmethod
@@ -16,7 +17,8 @@ MAX_EXT_LEN = 2147483647
 # this on the module...
 REGISTRY = {'obj_types': {},
             'ext_types': {},
-            'serializables': {}}
+            'serializables': {},
+            'pydantic_serializables': {}}
 
 
 class DtypeNotSupported(Exception):
@@ -29,7 +31,23 @@ def register(obj_def):
 
     For example obj_def and required methods, see NumpyArray below
     """
-    if dataclasses.is_dataclass(obj_def):
+    mro = []
+    if hasattr(obj_def, 'mro'):
+        try:
+            mro = obj_def.mro()
+        except ValueError:
+            pass
+
+    if BaseModel in mro:
+        # Pydantic support
+        class_name = obj_def.__name__
+        REGISTRY['pydantic_serializables'][class_name] = obj_def
+        REGISTRY['obj_types'][obj_def] = PydanticHandler
+        # Register the DataclassHandler if not done already
+        if PydanticHandler.ext_type not in REGISTRY['ext_types']:
+            REGISTRY['ext_types'][
+                PydanticHandler.ext_type] = PydanticHandler
+    elif dataclasses.is_dataclass(obj_def):
         # Handle dataclasses, every dataclass needs to be registered
         # via register.
         class_name = obj_def.__name__
@@ -163,6 +181,37 @@ class DataclassHandler:
         return klass(**data)
 
 
+class PydanticHandler:
+    """
+    Serialize pydantic models by serializing the dict
+    of pydantic models.
+    """
+    ext_type = 6
+
+    @classmethod
+    def packb(cls, obj) -> bytes:
+        dataclass_name = obj.__class__.__name__
+        if isinstance(dataclass_name, str):
+            dataclass_name = dataclass_name
+
+        # Recursively process dataclasses of the dataclass,
+        # serialize as tuple(dataclass_name, __dict__)
+        return dumpb(
+            (dataclass_name, obj.dict()),
+            do_compress=False)
+
+    @classmethod
+    def unpackb(cls, data):
+        # Recursively process the contents of the dataclass
+        classname, data = loadb(
+            data, do_decompress=False, raw=False)
+        # Return registered class or Serializable (as default)
+        assert classname in REGISTRY['pydantic_serializables'], \
+            f'class {classname} not yet registered'
+        klass = REGISTRY['pydantic_serializables'][classname]
+        return klass(**data)
+
+
 class SliceHandler:
     """
     Serialize slices
@@ -244,5 +293,6 @@ def loadb(packed: bytes, do_decompress=True, decompress_func=lz4_decompress,
         decompress_func = do_nothing
     return msgpack.unpackb(
         decompress_func(packed), ext_hook=ext_hook,
+        strict_map_key=False,
         max_ext_len=MAX_EXT_LEN,
         max_str_len=MAX_STR_LEN, raw=raw)
