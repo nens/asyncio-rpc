@@ -30,6 +30,7 @@ class RPCClient(object):
         self.processing = False
         self.on_rpc_message = None
         self.subscriptions = {}
+        logger.debug("Initialized RPC client")
 
     def register_models(self, models: List):
         """
@@ -46,6 +47,7 @@ class RPCClient(object):
         Internal helper function for stopping the rpc_commlayer subscription
         upon receiving a result from the RPC_server
         """
+        logger.debug("Start waiting for result with uid: %s", uid)
         result = None
         while True:
             event, channel = await self.queue.get()
@@ -55,6 +57,7 @@ class RPCClient(object):
 
             # Discard everything that we don't need...
             if event.uid == uid:
+                logger.debug("Received result for uid: %s, %s", uid, event)
                 result = event
                 break
 
@@ -108,11 +111,25 @@ class RPCClient(object):
         # Make sure to be subscribed before publishing
         await self.rpc_commlayer.do_subscribe()
 
+        # Always create a future before sending the rpc_func_stack
+        # else the result can come back before the future is created
+        future = asyncio.get_event_loop().create_future()
+        self.futures[rpc_func_stack.uid] = future
+        logger.debug(
+            "Added future for rpc_func_stack: %s", rpc_func_stack.uid)
+
         # Publish RPCStack to RPCServer
         count = await self.rpc_commlayer.publish(
             rpc_func_stack, channel=channel)
 
+        logger.debug(
+            "RPC call rpc_func_stack: %s, %s (received=%s, channel=%s)",
+            rpc_func_stack.uid, rpc_func_stack, count, channel
+        )
+
         if count == 0:
+            self.futures.pop(rpc_func_stack.uid)
+            future.set_result()
             raise NotReceived(
                 f"rpc_call was not received "
                 f"by any subscriber {rpc_func_stack}")
@@ -125,27 +142,40 @@ class RPCClient(object):
             # the given timeout. The background processing initialized
             # by client.serve() resolves the future when a result
             # is returned.
-            future = asyncio.get_event_loop().create_future()
-            self.futures[rpc_func_stack.uid] = future
             try:
                 result = await asyncio.wait_for(
                     future, timeout=rpc_func_stack.timeout)
+                logger.debug(
+                    "Retrieved result for rpc_func_stack %s, %s",
+                    rpc_func_stack.uid, result)
             except asyncio.TimeoutError:
+                logger.debug(
+                    "TimeoutError rpc_func_stack: %s", rpc_func_stack.uid)
                 raise RPCTimeoutError(f"rpc_func_stack: {rpc_func_stack}")
         else:
             # No background processing, so start the subscription
             # and wait for result via asyncio.gather
             # _wait_for_result is a helper function to unsubscribe
             # on a result.
+
+            # Don't need future here anymore
+            self.futures.pop(rpc_func_stack.uid)
+            future.set_result()
             try:
                 _, result = await asyncio.gather(
                     self.rpc_commlayer.subscribe(self._on_rpc_event),
                     self._wait_for_result(rpc_func_stack.uid)
                 )
+                logger.debug(
+                    "Retrieved result for rpc_func_stack %s, %s",
+                    rpc_func_stack.uid, result)
             except asyncio.TimeoutError:
+                logger.debug(
+                    "TimeoutError rpc_func_stack: %s", rpc_func_stack.uid)
                 raise RPCTimeoutError(f"rpc_func_stack: {rpc_func_stack}")
 
         if isinstance(result, RPCException):
+            logger.debug("RPC exception %s, %s", rpc_func_stack.uid, result)
             # Try to resolve builtin errors
             try:
                 exception_class = getattr(builtins, result.classname)
@@ -164,6 +194,7 @@ class RPCClient(object):
         Callback function sent to rpc_commlayer, is called
         when a message is received by the subscription.
         """
+        logger.debug("New RPC event %s", rpc_instance)
         assert isinstance(rpc_instance, RPCBase)
         # Put everything in a queue and process
         # it afterwards
@@ -194,7 +225,10 @@ class RPCClient(object):
                 isinstance(event, RPCMessage)
 
             if isinstance(event, RPCResult) or isinstance(event, RPCException):
+                logger.debug(
+                    "Received new queue item %s, %s", event.uid, event)
                 if event.uid in self.futures:
+                    logger.debug("Found event in futures %s", event.uid)
                     # A future is created & awaited in self.rpc_call
                     # resolve this future to proceed in the rpc_call function
                     # and return a result
@@ -202,13 +236,18 @@ class RPCClient(object):
                     if future is not None:
                         future.set_result(event)
                 elif event.uid in self.subscriptions:
+                    logger.debug("Found event in subscriptions %s", event.uid)
                     subscription = self.subscriptions[event.uid]
                     await subscription.enqueue(event)
                 else:
+                    logger.error(
+                        "Future not found for %s, %s", event.uid, event)
                     # FUTURE NOT FOUND FOR EVENT
                     # TODO: how to handle this??
                     pass  # pragma: nocover
             elif isinstance(event, RPCMessage) and on_rpc_message:
+                logger.error(
+                    "RPCMessage received: %s", event)
                 await on_rpc_message(event, channel)
 
         self.processing = False
