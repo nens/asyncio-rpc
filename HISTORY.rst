@@ -1,4 +1,4 @@
-0.1.9 (unreleased)
+0.1.9 (2021-02-22)
 ------------------
 
 - Bugfix: asyncio future that waits for return RPC message needs
