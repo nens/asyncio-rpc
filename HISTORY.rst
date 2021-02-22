@@ -1,8 +1,10 @@
 0.1.9 (unreleased)
 ------------------
 
-- Nothing changed yet.
+- Bugfix: asyncio future that waits for return RPC message needs
+  to be created before sending RPC message to RPC server.
 
+- Added debug logging statements.
 
 0.1.8 (2021-02-05)
 ------------------
