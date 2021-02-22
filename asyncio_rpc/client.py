@@ -240,13 +240,11 @@ class RPCClient(object):
                     subscription = self.subscriptions[event.uid]
                     await subscription.enqueue(event)
                 else:
-                    logger.error(
-                        "Future not found for %s, %s", event.uid, event)
                     # FUTURE NOT FOUND FOR EVENT
-                    # TODO: how to handle this??
-                    pass  # pragma: nocover
+                    logger.exception(
+                        "Future not found for %s, %s", event.uid, event)
             elif isinstance(event, RPCMessage) and on_rpc_message:
-                logger.error(
+                logger.debug(
                     "RPCMessage received: %s", event)
                 await on_rpc_message(event, channel)
 
