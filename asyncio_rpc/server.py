@@ -31,6 +31,7 @@ class RPCServer(object):
         self.registry = {}
         self.publishers = {}
         self.rpc_commlayer = rpc_commlayer
+        logger.debug("Initialized RPCServer")
 
     def register_models(self, models):
         """
@@ -62,6 +63,9 @@ class RPCServer(object):
         executor and return the result or exception
         """
         assert isinstance(rpc_func_stack, RPCStack)
+        logger.debug(
+            "Received RPC call rpc_func_stack %s, %s",
+            rpc_func_stack.uid, rpc_func_stack)
 
         # Create a default result
         result = RPCResult(
@@ -70,15 +74,26 @@ class RPCServer(object):
             data=None)
 
         if rpc_func_stack.namespace not in self.registry:
+            logger.debug(
+                "Unknown namespace for rpc_func_stack: %s", rpc_func_stack.uid
+            )
             raise NamespaceError("Unknown namespace")
 
         executor = self.registry[rpc_func_stack.namespace]
 
         try:
             # Wait for result from executor
+            logger.debug(
+                "Going to run executor for rpc_func_stack: %s",
+                rpc_func_stack.uid
+            )
             result.data = await asyncio.wait_for(
                 executor.rpc_call(rpc_func_stack.stack),
                 timeout=rpc_func_stack.timeout)
+            logger.debug(
+                "Got result for rpc_func_stack: %s, %s",
+                rpc_func_stack.uid, result
+            )
         except Exception as e:
             # For now catch all exceptions here...
             # TODO: debug mode with stacktrace
@@ -87,6 +102,10 @@ class RPCServer(object):
                 namespace=rpc_func_stack.namespace,
                 classname=e.__class__.__name__,
                 exc_args=e.args)
+            logger.debug(
+                "Exception occurred for rpc_funct_stack: %s, %s",
+                rpc_func_stack.uid, e
+            )
 
         return result
 
@@ -136,11 +155,20 @@ class RPCServer(object):
 
             assert isinstance(rpc_func_stack, RPCStack)
 
+            logger.debug(
+                "Processing rpcstack %s, %s",
+                rpc_func_stack.uid, rpc_func_stack
+            )
+
             if isinstance(rpc_func_stack, RPCSubStack):
                 try:
                     # Process rpc_func_call_stack
                     await self.subscribe_call(rpc_func_stack)
                 except Exception as e:
+                    # Log everything that is not an
+                    # instance of RPCException
+                    if not isinstance(e, RPCException):
+                        logger.exception(e)
                     result = RPCException(
                         uid=rpc_func_stack.uid,
                         namespace=rpc_func_stack.namespace,
@@ -157,11 +185,22 @@ class RPCServer(object):
                 try:
                     # Process rpc_func_call_stack
                     result = await self.rpc_call(rpc_func_stack)
+
+                    logger.debug(
+                        "Publishing result for %s, %s",
+                        rpc_func_stack.uid, rpc_func_stack)
                     # Publish result of rpc call
                     await self.rpc_commlayer.publish(
                         result, channel=rpc_func_stack.respond_to)
-
+                    logger.debug("Publishing done for %s", rpc_func_stack.uid)
                 except Exception as e:
+                    logger.debug(
+                        "Error occured for %s: %s", rpc_func_stack.uid, e)
+                    # Log everything that is not an
+                    # instance of RPCException
+                    if not isinstance(e, RPCException):
+                        logger.exception(e)
+
                     result = RPCException(
                         uid=rpc_func_stack.uid,
                         namespace=rpc_func_stack.namespace,
