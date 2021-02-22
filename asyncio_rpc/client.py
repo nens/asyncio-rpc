@@ -129,7 +129,7 @@ class RPCClient(object):
 
         if count == 0:
             self.futures.pop(rpc_func_stack.uid)
-            future.set_result()
+            future.set_result(None)
             raise NotReceived(
                 f"rpc_call was not received "
                 f"by any subscriber {rpc_func_stack}")
@@ -160,7 +160,7 @@ class RPCClient(object):
 
             # Don't need future here anymore
             self.futures.pop(rpc_func_stack.uid)
-            future.set_result()
+            future.set_result(None)
             try:
                 _, result = await asyncio.gather(
                     self.rpc_commlayer.subscribe(self._on_rpc_event),
