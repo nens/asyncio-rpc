@@ -1,4 +1,4 @@
-0.1.10 (unreleased)
+0.1.10 (2021-02-26)
 -------------------
 
 - Disabled logging errors for missing Asyncio futures 
