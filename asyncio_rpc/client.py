@@ -3,7 +3,8 @@ import builtins
 import logging
 from typing import Union, List
 from .models import (
-    RPCMessage, RPCResult, RPCException, RPCStack, RPCBase, RPCSubStack)
+    RPCMessage, RPCResult, RPCException, RPCStack, RPCBase, RPCSubStack,
+    RPCPubResult)
 from asyncio_rpc.commlayers.base import AbstractRPCCommLayer
 from asyncio_rpc.pubsub import Subscription
 from asyncio_rpc.exceptions import (
@@ -241,8 +242,9 @@ class RPCClient(object):
                     await subscription.enqueue(event)
                 else:
                     # FUTURE NOT FOUND FOR EVENT
-                    logger.exception(
-                        "Future not found for %s, %s", event.uid, event)
+                    if not isinstance(event, RPCPubResult):
+                        logger.exception(
+                            "Future not found for %s, %s", event.uid, event)
             elif isinstance(event, RPCMessage) and on_rpc_message:
                 logger.debug(
                     "RPCMessage received: %s", event)

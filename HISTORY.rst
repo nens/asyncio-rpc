@@ -1,7 +1,8 @@
 0.1.10 (unreleased)
 -------------------
 
-- Nothing changed yet.
+- Disabled logging errors for missing Asyncio futures 
+  for subscriptions.
 
 
 0.1.9 (2021-02-22)
