@@ -1,7 +1,10 @@
 0.1.11 (unreleased)
 -------------------
 
-- Nothing changed yet.
+- Dropped Numpy save/load file serialize/deserialization for
+  a more generic approach that uses dictionaries instead. This
+  makes it easier to deserialize the Numpy array's in other
+  programming languages.
 
 
 0.1.10 (2021-02-26)

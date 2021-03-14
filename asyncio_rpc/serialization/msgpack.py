@@ -1,8 +1,8 @@
 import dataclasses
+from pydantic import BaseModel
 import msgpack
 import numpy as np
 from abc import ABC, abstractmethod
-from io import BytesIO
 from datetime import datetime
 from lz4.frame import compress as lz4_compress, decompress as lz4_decompress
 from typing import Any
@@ -17,7 +17,12 @@ MAX_EXT_LEN = 2147483647
 # this on the module...
 REGISTRY = {'obj_types': {},
             'ext_types': {},
-            'serializables': {}}
+            'serializables': {},
+            'pydantic_serializables': {}}
+
+
+class DtypeNotSupported(Exception):
+    pass
 
 
 def register(obj_def):
@@ -26,7 +31,23 @@ def register(obj_def):
 
     For example obj_def and required methods, see NumpyArray below
     """
-    if dataclasses.is_dataclass(obj_def):
+    mro = []
+    if hasattr(obj_def, 'mro'):
+        try:
+            mro = obj_def.mro()
+        except ValueError:
+            pass
+
+    if BaseModel in mro:
+        # Pydantic support
+        class_name = obj_def.__name__
+        REGISTRY['pydantic_serializables'][class_name] = obj_def
+        REGISTRY['obj_types'][obj_def] = PydanticHandler
+        # Register the DataclassHandler if not done already
+        if PydanticHandler.ext_type not in REGISTRY['ext_types']:
+            REGISTRY['ext_types'][
+                PydanticHandler.ext_type] = PydanticHandler
+    elif dataclasses.is_dataclass(obj_def):
         # Handle dataclasses, every dataclass needs to be registered
         # via register.
         class_name = obj_def.__name__
@@ -66,27 +87,45 @@ class AbstractHandler(ABC):
 
 class NumpyArrayHandler(AbstractHandler):
     """
-    Use np.save and np.load to serialize/deserialize
+    Use dictionairies to serialize/deserialize
     numpy array's.
+
     """
     ext_type = 1
     obj_type = np.ndarray
 
-    # Note:
-    # More generic approach, but a bit slower than
-    # packing it as a list/tuple with (dtype, shape, bytes)
+    # Note: numpy save/load file approach
+    # is a bit harder with other programming
+    # languages. So use dictionaires instead.
+    #
+    # Note2: Currently you cannot pack/unpack
+    # array's with dtype=object
     @classmethod
     def packb(cls, array: np.ndarray) -> bytes:
-        buf = BytesIO()
-        np.save(buf, array)
-        buf.seek(0)
-        return buf.read()
+        if str(array.dtype) == 'object':
+            raise DtypeNotSupported(
+                "Numpy dtype: %s is not supported" % array.dtype)
+
+        return dumpb({
+            'shape': array.shape,
+            'dtype': str(array.dtype),
+            'fortran_order': np.isfortran(array),
+            'data': array.tobytes()
+        }, do_compress=False)
 
     @classmethod
     def unpackb(cls, data: bytes) -> np.ndarray:
-        buf = BytesIO(data)
-        buf.seek(0)
-        return np.load(buf)
+        data = loadb(data, do_decompress=False)
+        if data['dtype'] == 'object':
+            raise DtypeNotSupported(
+                "Numpy dtype: %s is not supported" % data['dtype'])
+        res = np.frombuffer(
+            data['data'], dtype=data['dtype']).reshape(
+            data['shape']
+        )
+        if data['fortran_order']:
+            res = np.asfortranarray(res)
+        return res
 
 
 class NumpyStructuredArrayHandler(NumpyArrayHandler):
@@ -139,6 +178,37 @@ class DataclassHandler:
         assert classname in REGISTRY['serializables'], \
             f'class {classname} not yet registered'
         klass = REGISTRY['serializables'][classname]
+        return klass(**data)
+
+
+class PydanticHandler:
+    """
+    Serialize pydantic models by serializing the dict
+    of pydantic models.
+    """
+    ext_type = 6
+
+    @classmethod
+    def packb(cls, obj) -> bytes:
+        dataclass_name = obj.__class__.__name__
+        if isinstance(dataclass_name, str):
+            dataclass_name = dataclass_name
+
+        # Recursively process dataclasses of the dataclass,
+        # serialize as tuple(dataclass_name, __dict__)
+        return dumpb(
+            (dataclass_name, obj.dict()),
+            do_compress=False)
+
+    @classmethod
+    def unpackb(cls, data):
+        # Recursively process the contents of the dataclass
+        classname, data = loadb(
+            data, do_decompress=False, raw=False)
+        # Return registered class or Serializable (as default)
+        assert classname in REGISTRY['pydantic_serializables'], \
+            f'class {classname} not yet registered'
+        klass = REGISTRY['pydantic_serializables'][classname]
         return klass(**data)
 
 
@@ -259,5 +329,6 @@ def loadb(packed: bytes, do_decompress=True, decompress_func=lz4_decompress,
         decompress_func = do_nothing
     return msgpack.unpackb(
         decompress_func(packed), ext_hook=ext_hook,
+        strict_map_key=False,
         max_ext_len=MAX_EXT_LEN,
         max_str_len=MAX_STR_LEN, raw=raw)
