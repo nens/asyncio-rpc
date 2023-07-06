@@ -11,6 +11,7 @@ class Service:
     This function is executed by the RPC Server via
     the DefaultExecutor.
     """
+
     def multiply(self, x, y):
         return x * y
 
@@ -22,8 +23,11 @@ async def main(args):
     default msgpack serialization.
     """
     rpc_commlayer = await RPCRedisCommLayer.create(
-            subchannel=b'pub', pubchannel=b'sub',  # Inverse of client
-            host=args.redis_host, serialization=msgpack_serialization)
+        subchannel=b"pub",
+        pubchannel=b"sub",  # Inverse of client
+        host=args.redis_host,
+        serialization=msgpack_serialization,
+    )
 
     # Create a RPC Server with the commlayer
     rpc_server = RPCServer(rpc_commlayer)
@@ -34,21 +38,22 @@ async def main(args):
     # The executor receives a RPCStack from the commlayer
     # and will try to execute the provided function names (with
     # args & kwargs)
-    executor = DefaultExecutor(
-        namespace="TEST", instance=Service())
+    executor = DefaultExecutor(namespace="TEST", instance=Service())
 
     # Register executor.
     rpc_server.register(executor)
 
-    print('Start serving')
+    print("Start serving")
     await rpc_server.serve()
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     parser = ArgumentParser()
 
     # Provide Redis host that is accessible for both client/server.
-    parser.add_argument('redis_host', metavar='H', type=str,
-                        help='Redis host IP address')
+    parser.add_argument(
+        "redis_host", metavar="H", type=str, help="Redis host IP address"
+    )
     args = parser.parse_args()
 
     # Create asyncio loop and execute main method

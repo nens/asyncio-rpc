@@ -8,10 +8,12 @@ from asyncio_rpc.serialization import msgpack as msgpack_serialization
 # Create a stacked object structure..
 #  res = Service().integer.multiply(100, 100)
 
+
 class Integer:
     """
     Server side implementation for Integer multiplication
     """
+
     def multiply(self, x, y):
         return x * y
 
@@ -27,26 +29,30 @@ class Service:
 
 async def main(args):
     rpc_commlayer = await RPCRedisCommLayer.create(
-            subchannel=b'pub', pubchannel=b'sub',  # Inverse of client
-            host=args.redis_host, serialization=msgpack_serialization)
+        subchannel=b"pub",
+        pubchannel=b"sub",  # Inverse of client
+        host=args.redis_host,
+        serialization=msgpack_serialization,
+    )
 
     rpc_server = RPCServer(rpc_commlayer)
 
     # Register the Service above with the the default executor in
     # the TEST namespace
-    executor = DefaultExecutor(
-        namespace="TEST", instance=Service())
+    executor = DefaultExecutor(namespace="TEST", instance=Service())
 
     # Register executor
     rpc_server.register(executor)
 
-    print('Start serving')
+    print("Start serving")
     await rpc_server.serve()
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     parser = ArgumentParser()
-    parser.add_argument('redis_host', metavar='H', type=str,
-                        help='Redis host IP address')
+    parser.add_argument(
+        "redis_host", metavar="H", type=str, help="Redis host IP address"
+    )
     args = parser.parse_args()
 
     loop = asyncio.get_event_loop()

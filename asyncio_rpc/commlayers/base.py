@@ -6,6 +6,7 @@ class AbstractRPCCommLayer(ABC):
     """
     Abstract baseclass for RPC communication layer
     """
+
     @abstractmethod
     async def publish(self, rpc_instance: RPCBase):
         """

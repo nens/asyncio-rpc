@@ -2,10 +2,16 @@ import asyncio
 import logging
 from typing import List
 from asyncio_rpc.models import (
-    RPCStack, RPCResult, RPCException, RPCCall,
-    RPCSubStack, RPCUnSubStack)
+    RPCStack,
+    RPCResult,
+    RPCException,
+    RPCCall,
+    RPCSubStack,
+    RPCUnSubStack,
+)
 from asyncio_rpc.commlayers.base import AbstractRPCCommLayer
 from asyncio_rpc.pubsub import Publisher
+
 logger = logging.getLogger("asyncio-rpc-server")
 
 
@@ -21,6 +27,7 @@ class RPCServer(object):
     Remote procedure server class. Allows to register executors
     by namespace and execute RPC calls from a RPCClient
     """
+
     def __init__(self, rpc_commlayer: AbstractRPCCommLayer = None):
         assert isinstance(rpc_commlayer, AbstractRPCCommLayer)
         self.queue = asyncio.Queue()
@@ -49,7 +56,7 @@ class RPCServer(object):
         the client to the correct executor in the registry of
         the RPCServer.
         """
-        assert hasattr(executor, 'namespace')
+        assert hasattr(executor, "namespace")
 
         if executor.namespace in self.registry:
             raise NamespaceError("Namespace already exists")
@@ -65,18 +72,17 @@ class RPCServer(object):
         assert isinstance(rpc_func_stack, RPCStack)
         logger.debug(
             "Received RPC call rpc_func_stack %s, %s",
-            rpc_func_stack.uid, rpc_func_stack)
+            rpc_func_stack.uid,
+            rpc_func_stack,
+        )
 
         # Create a default result
         result = RPCResult(
-            uid=rpc_func_stack.uid,
-            namespace=rpc_func_stack.namespace,
-            data=None)
+            uid=rpc_func_stack.uid, namespace=rpc_func_stack.namespace, data=None
+        )
 
         if rpc_func_stack.namespace not in self.registry:
-            logger.debug(
-                "Unknown namespace for rpc_func_stack: %s", rpc_func_stack.uid
-            )
+            logger.debug("Unknown namespace for rpc_func_stack: %s", rpc_func_stack.uid)
             raise NamespaceError("Unknown namespace")
 
         executor = self.registry[rpc_func_stack.namespace]
@@ -84,15 +90,13 @@ class RPCServer(object):
         try:
             # Wait for result from executor
             logger.debug(
-                "Going to run executor for rpc_func_stack: %s",
-                rpc_func_stack.uid
+                "Going to run executor for rpc_func_stack: %s", rpc_func_stack.uid
             )
             result.data = await asyncio.wait_for(
-                executor.rpc_call(rpc_func_stack.stack),
-                timeout=rpc_func_stack.timeout)
+                executor.rpc_call(rpc_func_stack.stack), timeout=rpc_func_stack.timeout
+            )
             logger.debug(
-                "Got result for rpc_func_stack: %s, %s",
-                rpc_func_stack.uid, result
+                "Got result for rpc_func_stack: %s, %s", rpc_func_stack.uid, result
             )
         except Exception as e:
             # For now catch all exceptions here...
@@ -101,10 +105,10 @@ class RPCServer(object):
                 uid=rpc_func_stack.uid,
                 namespace=rpc_func_stack.namespace,
                 classname=e.__class__.__name__,
-                exc_args=e.args)
+                exc_args=e.args,
+            )
             logger.debug(
-                "Exception occurred for rpc_funct_stack: %s, %s",
-                rpc_func_stack.uid, e
+                "Exception occurred for rpc_funct_stack: %s, %s", rpc_func_stack.uid, e
             )
 
         return result
@@ -115,20 +119,19 @@ class RPCServer(object):
             raise NamespaceError("Unknown namespace")
 
         executor = self.registry[rpc_sub_stack.namespace]
-        if not hasattr(executor, 'subscribe_call'):
+        if not hasattr(executor, "subscribe_call"):
             raise NotImplementedError(
                 f"Executor for namespace: {rpc_sub_stack.namespace} has "
-                f"no subscribe_call function")
+                f"no subscribe_call function"
+            )
 
         publisher = Publisher(self, rpc_sub_stack)
         self.publishers[rpc_sub_stack.uid] = publisher
 
         # Create task for this publisher
-        asyncio.create_task(
-            executor.subscribe_call(publisher))
+        asyncio.create_task(executor.subscribe_call(publisher))
 
-    async def _on_rpc_event(
-            self, rpc_func_stack: RPCStack, channel: bytes = None):
+    async def _on_rpc_event(self, rpc_func_stack: RPCStack, channel: bytes = None):
         """
         Callback function sent to rpc_commlayer, is called
         when a RPCStack is received by the rpc_commlayer subscription
@@ -148,7 +151,7 @@ class RPCServer(object):
         while self._alive:
             item = await self.queue.get()
 
-            if item == b'END':
+            if item == b"END":
                 break
 
             rpc_func_stack, channel = item
@@ -156,8 +159,7 @@ class RPCServer(object):
             assert isinstance(rpc_func_stack, RPCStack)
 
             logger.debug(
-                "Processing rpcstack %s, %s",
-                rpc_func_stack.uid, rpc_func_stack
+                "Processing rpcstack %s, %s", rpc_func_stack.uid, rpc_func_stack
             )
 
             if isinstance(rpc_func_stack, RPCSubStack):
@@ -173,10 +175,12 @@ class RPCServer(object):
                         uid=rpc_func_stack.uid,
                         namespace=rpc_func_stack.namespace,
                         classname=e.__class__.__name__,
-                        exc_args=e.args)
+                        exc_args=e.args,
+                    )
                     # Publish exception
                     await self.rpc_commlayer.publish(
-                        result, channel=rpc_func_stack.respond_to)
+                        result, channel=rpc_func_stack.respond_to
+                    )
             elif isinstance(rpc_func_stack, RPCUnSubStack):
                 publisher = self.publishers.pop(rpc_func_stack.uid, None)
                 if publisher is not None:
@@ -188,14 +192,16 @@ class RPCServer(object):
 
                     logger.debug(
                         "Publishing result for %s, %s",
-                        rpc_func_stack.uid, rpc_func_stack)
+                        rpc_func_stack.uid,
+                        rpc_func_stack,
+                    )
                     # Publish result of rpc call
                     await self.rpc_commlayer.publish(
-                        result, channel=rpc_func_stack.respond_to)
+                        result, channel=rpc_func_stack.respond_to
+                    )
                     logger.debug("Publishing done for %s", rpc_func_stack.uid)
                 except Exception as e:
-                    logger.debug(
-                        "Error occured for %s: %s", rpc_func_stack.uid, e)
+                    logger.debug("Error occured for %s: %s", rpc_func_stack.uid, e)
                     # Log everything that is not an
                     # instance of RPCException
                     if not isinstance(e, RPCException):
@@ -205,10 +211,12 @@ class RPCServer(object):
                         uid=rpc_func_stack.uid,
                         namespace=rpc_func_stack.namespace,
                         classname=e.__class__.__name__,
-                        exc_args=e.args)
+                        exc_args=e.args,
+                    )
                     # Try to publish error
                     await self.rpc_commlayer.publish(
-                        result, channel=rpc_func_stack.respond_to)
+                        result, channel=rpc_func_stack.respond_to
+                    )
 
     async def serve(self):
         """
@@ -219,7 +227,7 @@ class RPCServer(object):
         """
         task_args_map = {
             self.rpc_commlayer.subscribe: [self._on_rpc_event],
-            self._process_queue: []
+            self._process_queue: [],
         }
 
         # create the main tasks
@@ -284,8 +292,8 @@ class DefaultExecutor:
             if callable(instance_attr):
                 # Function
                 resource = instance_attr(
-                    *rpc_func_call.func_args,
-                    **rpc_func_call.func_kwargs)
+                    *rpc_func_call.func_args, **rpc_func_call.func_kwargs
+                )
             else:
                 # Asume property
                 resource = instance_attr

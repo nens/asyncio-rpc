@@ -32,7 +32,7 @@ class Executor:
 
         # Clean-up
         rpc_server = publisher._server
-        await rpc_server.queue.put(b'END')
+        await rpc_server.queue.put(b"END")
         await rpc_server.rpc_commlayer.unsubscribe()
 
     async def rpc_call(self, rpc_stack):
@@ -41,17 +41,15 @@ class Executor:
 
 @pytest.mark.asyncio
 async def test_pubsub():
-
-    rpc_client = RPCClient(await rpc_commlayer(b'pub', b'sub'))
-    rpc_server = RPCServer(await rpc_commlayer(b'sub', b'pub'))
-    executor = Executor('PUBSUB', None)
+    rpc_client = RPCClient(await rpc_commlayer(b"pub", b"sub"))
+    rpc_server = RPCServer(await rpc_commlayer(b"sub", b"pub"))
+    executor = Executor("PUBSUB", None)
     rpc_server.register(executor)
 
     await rpc_server.rpc_commlayer.do_subscribe()
 
-    rpc_func_call = RPCCall('get_item', [1], {})
-    rpc_func_stack = RPCSubStack(
-        uuid4().hex, 'PUBSUB', 300, [rpc_func_call])
+    rpc_func_call = RPCCall("get_item", [1], {})
+    rpc_func_stack = RPCSubStack(uuid4().hex, "PUBSUB", 300, [rpc_func_call])
 
     async def process_subscriber(rpc_func_stack):
         subscriber = await rpc_client.subscribe_call(rpc_func_stack)
@@ -61,7 +59,7 @@ async def test_pubsub():
                 await subscriber.close()
 
         # Clean-up
-        await rpc_client.queue.put(b'END')
+        await rpc_client.queue.put(b"END")
         await rpc_client.rpc_commlayer.unsubscribe()
 
     funcs = [

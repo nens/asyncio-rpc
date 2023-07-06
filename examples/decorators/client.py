@@ -20,11 +20,12 @@ def rpc_method(func):
 
     Note: it has drawbacks, see below under multiply.
     """
+
     def rpc_method(self, *args, **kwargs):
         rpc_func_call = RPCCall(func.__name__, args, kwargs)
-        rpc_func_stack = RPCStack(
-            uuid4().hex, self.namespace, 300, [rpc_func_call])
+        rpc_func_stack = RPCStack(uuid4().hex, self.namespace, 300, [rpc_func_call])
         return self.client.rpc_call(rpc_func_stack)
+
     rpc_method._is_rpc_method = True
     return rpc_method
 
@@ -58,12 +59,15 @@ class ServiceClient:
 
 async def main(args):
     rpc_commlayer = await RPCRedisCommLayer.create(
-            subchannel=b'sub', pubchannel=b'pub',
-            host=args.redis_host, serialization=msgpack_serialization)
+        subchannel=b"sub",
+        pubchannel=b"pub",
+        host=args.redis_host,
+        serialization=msgpack_serialization,
+    )
 
     rpc_client = RPCClient(rpc_commlayer)
 
-    service_client = ServiceClient(rpc_client, 'TEST')
+    service_client = ServiceClient(rpc_client, "TEST")
 
     result = await service_client.multiply(100, 100)
 
@@ -75,10 +79,11 @@ async def main(args):
         print(e)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     parser = ArgumentParser()
-    parser.add_argument('redis_host', metavar='H', type=str,
-                        help='Redis host IP address')
+    parser.add_argument(
+        "redis_host", metavar="H", type=str, help="Redis host IP address"
+    )
     args = parser.parse_args()
 
     loop = asyncio.get_event_loop()

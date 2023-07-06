@@ -12,8 +12,10 @@ def rpc_method(func):
     Server side decorator for methods
     that need to be exposed via RPC.
     """
+
     def rpc_method(*args, **kwargs):
         return func(*args, **kwargs)
+
     rpc_method._is_rpc_method = True
     return rpc_method
 
@@ -43,15 +45,14 @@ class DecoratorFilterExecutor(DefaultExecutor):
             # Try to get the function/property from self.instance
             instance_attr = getattr(resource, rpc_func_call.func_name)
 
-            if not hasattr(instance_attr, '_is_rpc_method'):
-                raise AttributeError(
-                    "%s is not a RPC method" % rpc_func_call.func_name)
+            if not hasattr(instance_attr, "_is_rpc_method"):
+                raise AttributeError("%s is not a RPC method" % rpc_func_call.func_name)
 
             if callable(instance_attr):
                 # Function
                 resource = instance_attr(
-                    *rpc_func_call.func_args,
-                    **rpc_func_call.func_kwargs)
+                    *rpc_func_call.func_args, **rpc_func_call.func_kwargs
+                )
             else:
                 # Asume property
                 resource = instance_attr
@@ -61,26 +62,30 @@ class DecoratorFilterExecutor(DefaultExecutor):
 
 async def main(args):
     rpc_commlayer = await RPCRedisCommLayer.create(
-            subchannel=b'pub', pubchannel=b'sub',  # Inverse of client
-            host=args.redis_host, serialization=msgpack_serialization)
+        subchannel=b"pub",
+        pubchannel=b"sub",  # Inverse of client
+        host=args.redis_host,
+        serialization=msgpack_serialization,
+    )
 
     rpc_server = RPCServer(rpc_commlayer)
 
     # Register the Service above with the the default executor in
     # the TEST namespace
-    executor = DecoratorFilterExecutor(
-        namespace="TEST", instance=Service())
+    executor = DecoratorFilterExecutor(namespace="TEST", instance=Service())
 
     # Register executor
     rpc_server.register(executor)
 
-    print('Start serving')
+    print("Start serving")
     await rpc_server.serve()
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     parser = ArgumentParser()
-    parser.add_argument('redis_host', metavar='H', type=str,
-                        help='Redis host IP address')
+    parser.add_argument(
+        "redis_host", metavar="H", type=str, help="Redis host IP address"
+    )
     args = parser.parse_args()
 
     loop = asyncio.get_event_loop()

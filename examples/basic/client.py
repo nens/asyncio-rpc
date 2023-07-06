@@ -12,6 +12,7 @@ class ServiceClient:
     'Proxy' class exposing the same functions as the
     executor on the server side.
     """
+
     def __init__(self, client: RPCClient, namespace=None):
         """
         Set the RPC client and the namespace (should be same as server side)
@@ -34,8 +35,7 @@ class ServiceClient:
         to the RPC server.
         """
         rpc_func_call = RPCCall(func_name, func_args, func_kwargs)
-        rpc_func_stack = RPCStack(
-            uuid4().hex, self.namespace, 300, [rpc_func_call])
+        rpc_func_stack = RPCStack(uuid4().hex, self.namespace, 300, [rpc_func_call])
 
         # Let the client sent the RPCStack to the server.
         # The server executes the function specified
@@ -49,7 +49,8 @@ class ServiceClient:
         server side and returns the returned result.
         """
         return await self._rpc_call(
-            func_name='multiply', func_args=[x, y], func_kwargs={})
+            func_name="multiply", func_args=[x, y], func_kwargs={}
+        )
 
 
 async def main(args):
@@ -59,15 +60,18 @@ async def main(args):
     default msgpack serialization.
     """
     rpc_commlayer = await RPCRedisCommLayer.create(
-            subchannel=b'sub', pubchannel=b'pub',
-            host=args.redis_host, serialization=msgpack_serialization)
+        subchannel=b"sub",
+        pubchannel=b"pub",
+        host=args.redis_host,
+        serialization=msgpack_serialization,
+    )
 
     # Create a nwe RPCClient with the defined commlayer
     rpc_client = RPCClient(rpc_commlayer)
 
     # Create a ServiceClient which is a proxy class exposing
     # the same methods as available server side in the executor.
-    service_client = ServiceClient(rpc_client, 'TEST')
+    service_client = ServiceClient(rpc_client, "TEST")
 
     # Execute the multiply function via RPC
     result = await service_client.multiply(100, 100)
@@ -75,11 +79,12 @@ async def main(args):
     print(result)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     parser = ArgumentParser()
     # Provide Redis host that is accessible for both client/server.
-    parser.add_argument('redis_host', metavar='H', type=str,
-                        help='Redis host IP address')
+    parser.add_argument(
+        "redis_host", metavar="H", type=str, help="Redis host IP address"
+    )
     args = parser.parse_args()
 
     # Create asyncio loop and execute main method

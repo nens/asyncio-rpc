@@ -17,6 +17,7 @@ class RPCMessage(RPCBase):
     :param namespace: the namespace
     :param data: the data to sent (should not be to much data!)
     """
+
     uid: str
     namespace: str
     data: Any
@@ -31,6 +32,7 @@ class RPCCall(RPCBase):
     :param args: args for the function
     :param kwargs: kwargs for the function
     """
+
     func_name: str
     func_args: List
     func_kwargs: Dict
@@ -54,6 +56,7 @@ class RPCStack(RPCBase):
 
     Note: properties are also encoded as function calls.
     """
+
     uid: str
     namespace: str
     timeout: float
@@ -84,6 +87,7 @@ class RPCResult(RPCBase):
     :param namespace: is set to RPCStack.namespace
     :param data: is the result of the RPCStack call
     """
+
     uid: str
     namespace: str
     data: Any
@@ -107,9 +111,10 @@ class RPCException(RPCBase):
     :param classname: the classname of the exception raised
     :param exc_args: the exception args as a list
     """
+
     uid: str
     namespace: str
-    classname: str # noqa
+    classname: str  # noqa
     exc_args: List
 
 

@@ -1,8 +1,7 @@
 import asyncio
 import builtins
 from typing import Any, AsyncIterator
-from asyncio_rpc.models import (
-    RPCStack, RPCPubResult, RPCException, RPCUnSubStack)
+from asyncio_rpc.models import RPCStack, RPCPubResult, RPCException, RPCUnSubStack
 from asyncio_rpc.exceptions import WrappedException
 
 
@@ -31,10 +30,10 @@ class Publisher:
             return 0
 
         # Publish the data as partial data
-        publication = RPCPubResult(
-            self._rpc_stack.uid, self._rpc_stack.namespace, data)
+        publication = RPCPubResult(self._rpc_stack.uid, self._rpc_stack.namespace, data)
         receiver_count = await self._server.rpc_commlayer.publish(
-            publication, channel=self._rpc_stack.respond_to)
+            publication, channel=self._rpc_stack.respond_to
+        )
 
         if receiver_count == 0:
             self._is_active = False
@@ -60,22 +59,21 @@ class Subscription:
         self._client.subscriptions.pop(self._rpc_stack.uid, None)
 
         rpc_unsub_stack = RPCUnSubStack(
-            self._rpc_stack.uid, self._rpc_stack.namespace,
-            300, [None])
+            self._rpc_stack.uid, self._rpc_stack.namespace, 300, [None]
+        )
 
         # Publish to RPCServer
-        await self._client.rpc_commlayer.publish(
-            rpc_unsub_stack)
+        await self._client.rpc_commlayer.publish(rpc_unsub_stack)
 
         self.queue._queue.clear()
         self.queue._finished.set()
         self.queue._unfinished_tasks = 0
-        await self.queue.put(b'STOP')
+        await self.queue.put(b"STOP")
 
     async def enumerate(self) -> AsyncIterator[Any]:
         while True:
             result = await self.queue.get()
-            if result == b'STOP':
+            if result == b"STOP":
                 break
 
             if isinstance(result, RPCException):
@@ -92,5 +90,4 @@ class Subscription:
             yield result.data
 
     def __del__(self):
-        self._client.subscriptions.pop(
-            self._rpc_stack.uid, None)
+        self._client.subscriptions.pop(self._rpc_stack.uid, None)

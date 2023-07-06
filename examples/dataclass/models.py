@@ -6,6 +6,7 @@ class Integer:
     """
     Dataclass wrapper around an integer value
     """
+
     value: int
 
 
@@ -14,4 +15,5 @@ class MultiplyResult:
     """
     Dataclass wrapper around a multiplication result
     """
+
     value: int

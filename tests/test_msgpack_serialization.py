@@ -8,18 +8,18 @@ from asyncio_rpc.serialization import msgpack as msgpack_serialization
 @pytest.fixture()
 def serialize_deserialize():
     def func(value):
-        return msgpack_serialization.loadb(
-            msgpack_serialization.dumpb(value))
+        return msgpack_serialization.loadb(msgpack_serialization.dumpb(value))
+
     return func
 
 
 def test_dict_serialization(serialize_deserialize):
-    value = {'1': 2, 10: 1.10}
+    value = {"1": 2, 10: 1.10}
     assert value == serialize_deserialize(value)
 
 
 def test_byte_and_str_serialization(serialize_deserialize):
-    value = {'1': b'2', b'10': '1.10'}
+    value = {"1": b"2", b"10": "1.10"}
     assert value == serialize_deserialize(value)
 
 
@@ -83,12 +83,10 @@ def test_dataclass_serialization(serialize_deserialize):
 
 
 def test_dataclass_wrapper_serialization(serialize_deserialize):
-    value = DataclassWrapper(
-        DataclassTest(101, np.arange(100, dtype=np.float32)))
+    value = DataclassWrapper(DataclassTest(101, np.arange(100, dtype=np.float32)))
     deserialized = serialize_deserialize(value)
     assert value.dataclass_test.uid == deserialized.dataclass_test.uid
-    assert np.all(
-        value.dataclass_test.data == deserialized.dataclass_test.data)
+    assert np.all(value.dataclass_test.data == deserialized.dataclass_test.data)
 
 
 @dataclass
