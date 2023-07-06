@@ -1,4 +1,4 @@
-0.1.11 (unreleased)
+0.1.11 (2023-07-06)
 -------------------
 
 - Add support for RPC client graceful shutdown.
