@@ -1,7 +1,7 @@
 0.1.11 (unreleased)
 -------------------
 
-- Nothing changed yet.
+- Add support for RPC client graceful shutdown.
 
 
 0.1.10 (2021-02-26)

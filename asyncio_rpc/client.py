@@ -289,3 +289,10 @@ class RPCClient(object):
                     new_task = asyncio.ensure_future(coro(*args))
                     main_tasks[new_task] = (coro, args)
                     running.add(new_task)
+
+    async def close(self):
+        """
+        Gracefully shutdown the client and rpc_commlayer
+        """
+        await self.queue.put(b'END')
+        await self.rpc_commlayer.close()

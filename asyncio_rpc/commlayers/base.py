@@ -36,3 +36,9 @@ class AbstractRPCCommLayer(ABC):
         This is needed for Redis and might not be needed
         for other communication layers
         """
+
+    @abstractmethod
+    async def close(self):
+        """
+        Close the commlayer including closing all open connections, async tasks etc.
+        """
