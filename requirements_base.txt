@@ -1,4 +1,0 @@
-msgpack==0.6.0
-lz4==2.1.6
-numpy==1.16.1
-redis[hiredis]==4.6.0

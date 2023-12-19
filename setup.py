@@ -32,15 +32,18 @@ with open("HISTORY.rst") as history_file:
     history = history_file.read()
 
 lightweight_requirements = [
-    "numpy>=1.13",
-    "msgpack>=0.6.0",
+    "msgpack>=1.0.7",
     "lz4>=2.1.6",
-    "redis[hiredis]==4.6.0",
+    "redis[hiredis]<5.0",
+]
+
+numpy_requirements = [
+    "numpy>=1.23",  
 ]
 
 setup_requirements = []
 
-test_requirements = ["pytest==4.0.1"]
+test_requirements = ["pytest", "pytest-asyncio"]
 
 setup(
     author="Jelle Prins",
@@ -75,7 +78,9 @@ setup(
     setup_requires=setup_requirements,
     test_suite="tests",
     tests_require=test_requirements,
-    extras_require={},
+    extras_require={
+        "numpy": numpy_requirements
+    },
     url="https://github.com/nens/asyncio_rpc",
     version=find_version("asyncio_rpc", "__init__.py"),
     zip_safe=False,

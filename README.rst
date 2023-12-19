@@ -25,7 +25,7 @@ Overview
 Features
 --------
  - Asyncio RPC client/server
- - Msgpack serialization with option to use own dataclasses (Python 3.7)
+ - Msgpack serialization with option to use own dataclasses (Python 3.8)
  - Redis communication layer
  - Other serialization methods and communication layers can be added
 
@@ -36,8 +36,8 @@ Examples
 The examples can be run from this directory, for the dataclass example 
 (using localhost as redis host):
 
-    >>> python3.7 -m examples.dataclass.server localhost
-    >>> python3.7 -m examples.dataclass.client localhost
+    >>> python3.8 -m examples.dataclass.server localhost
+    >>> python3.8 -m examples.dataclass.client localhost
 
 
 Testing

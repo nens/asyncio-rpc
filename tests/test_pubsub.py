@@ -1,11 +1,10 @@
-import pytest
 import asyncio
 from uuid import uuid4
 from asyncio_rpc.server import RPCServer
 from asyncio_rpc.client import RPCClient
 
 from asyncio_rpc.models import RPCCall, RPCSubStack
-from .utils import rpc_commlayer
+from .conftest import rpc_commlayer
 from asyncio_rpc.pubsub import Publisher
 
 
@@ -39,7 +38,6 @@ class Executor:
         pass
 
 
-@pytest.mark.asyncio
 async def test_pubsub():
     rpc_client = RPCClient(await rpc_commlayer(b"pub", b"sub"))
     rpc_server = RPCServer(await rpc_commlayer(b"sub", b"pub"))

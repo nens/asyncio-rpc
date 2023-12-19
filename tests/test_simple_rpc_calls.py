@@ -1,16 +1,9 @@
 import pytest
 from dataclasses import dataclass
 from uuid import uuid4
-
-
-from tests.utils import do_rpc_call as do_rpc_call_fixture
-
 from asyncio_rpc.models import RPCCall, RPCStack
 from asyncio_rpc.client import WrappedException
 from asyncio_rpc.server import DefaultExecutor
-
-
-do_rpc_call = do_rpc_call_fixture
 
 
 @dataclass
@@ -90,7 +83,6 @@ class ServiceClient(object):
         return await self.client.rpc_call(rpc_func_stack)
 
 
-@pytest.mark.asyncio
 async def test_simple_call(do_rpc_call):
     test_service_client = ServiceClient(None)
     result = await do_rpc_call(
@@ -101,7 +93,6 @@ async def test_simple_call(do_rpc_call):
     assert result == 100 * 100
 
 
-@pytest.mark.asyncio
 async def test_simple_call_with_client_processing(do_rpc_call):
     test_service_client = ServiceClient(None)
     result = await do_rpc_call(
@@ -113,7 +104,6 @@ async def test_simple_call_with_client_processing(do_rpc_call):
     assert result == 100 * 100
 
 
-@pytest.mark.asyncio
 async def test_simple_call2(do_rpc_call):
     test_service_client = ServiceClient(None)
     result = await do_rpc_call(
@@ -124,7 +114,6 @@ async def test_simple_call2(do_rpc_call):
     assert result == "bar"
 
 
-@pytest.mark.asyncio
 async def test_property(do_rpc_call):
     test_service_client = ServiceClient(None)
     result = await do_rpc_call(
@@ -135,7 +124,6 @@ async def test_property(do_rpc_call):
     assert result == {"foo": "bar"}
 
 
-@pytest.mark.asyncio
 async def test_key_error(do_rpc_call):
     test_service_client = ServiceClient(None)
     with pytest.raises(KeyError):
@@ -146,7 +134,6 @@ async def test_key_error(do_rpc_call):
         )
 
 
-@pytest.mark.asyncio
 async def test_not_builtin_exception(do_rpc_call):
     test_service_client = ServiceClient(None)
     with pytest.raises(WrappedException):
@@ -157,7 +144,6 @@ async def test_not_builtin_exception(do_rpc_call):
         )
 
 
-@pytest.mark.asyncio
 async def test_custom_data_model(do_rpc_call):
     test_service_client = ServiceClient(None)
     value = CustomDataModel(100, 100)

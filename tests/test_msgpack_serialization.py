@@ -5,17 +5,9 @@ from dataclasses import dataclass
 from asyncio_rpc.serialization import msgpack as msgpack_serialization
 
 
-@pytest.fixture()
-def serialize_deserialize():
-    def func(value):
-        return msgpack_serialization.loadb(msgpack_serialization.dumpb(value))
-
-    return func
-
-
 def test_dict_serialization(serialize_deserialize):
     value = {"1": 2, 10: 1.10}
-    assert value == serialize_deserialize(value)
+    assert value == serialize_deserialize(value, strict_map_key=False)
 
 
 def test_byte_and_str_serialization(serialize_deserialize):
