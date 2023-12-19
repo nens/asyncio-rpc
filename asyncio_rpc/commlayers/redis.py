@@ -1,7 +1,9 @@
 from uuid import uuid4
 from .base import AbstractRPCCommLayer
-from aioredis import create_redis
+import redis.asyncio as async_redis
 from ..models import RPCStack, RPCResult, RPCBase, SERIALIZABLE_MODELS
+from typing import Optional
+
 
 RESULT_EXPIRE_TIME = 300  # seconds
 
@@ -33,7 +35,7 @@ class RPCRedisCommLayer(AbstractRPCCommLayer):
         self.serialization = serialization
 
         # Redis for publishing
-        self.redis = await create_redis(f"redis://{host}")
+        self.redis = async_redis.from_url(f"redis://{host}")
 
         # By default register all RPC models
         for model in SERIALIZABLE_MODELS:
@@ -57,13 +59,15 @@ class RPCRedisCommLayer(AbstractRPCCommLayer):
         """
         self.subchannel = subchannel
         self.pubchannel = pubchannel
+        self.redis: async_redis.Redis
+        self.pub_sub = None
 
     async def do_subscribe(self):
         if not self.subscribed:
             # By default subscribe
-            self.sub_redis = await create_redis(f"redis://{self.host}")
-            channels = await self.sub_redis.subscribe(self.subchannel)
-            self.sub_channel = channels[0]
+            self.sub_redis = async_redis.from_url(f"redis://{self.host}")
+            self.pub_sub = self.sub_redis.pubsub(ignore_subscribe_messages=True)
+            await self.pub_sub.subscribe(self.subchannel)
             self.subscribed = True
 
     async def publish(self, rpc_instance: RPCBase, channel=None):
@@ -89,7 +93,7 @@ class RPCRedisCommLayer(AbstractRPCCommLayer):
             await self.redis.set(
                 redis_key,
                 self.serialization.dumpb(rpc_instance.data),
-                expire=RESULT_EXPIRE_TIME,
+                ex=RESULT_EXPIRE_TIME,
             )
 
             # Set redis_key and remove data, since
@@ -114,7 +118,7 @@ class RPCRedisCommLayer(AbstractRPCCommLayer):
             await self.redis.delete(redis_key)
         return data
 
-    async def _process_msg(self, msg, on_rpc_event_callback, channel=None):
+    async def _process_msg(self, msg, on_rpc_event_callback, channel_name):
         """
         Interal message processing, is called on every received
         message via the subscription.
@@ -135,33 +139,34 @@ class RPCRedisCommLayer(AbstractRPCCommLayer):
                 if isinstance(event.data, dict) and "redis_key" in event.data:
                     event.data = await self.get_data(event.data["redis_key"])
 
-            await on_rpc_event_callback(event, channel=channel.name)
+            await on_rpc_event_callback(event, channel=channel_name)
 
-    async def subscribe(self, on_rpc_event_callback, channel=None, redis=None):
+    async def subscribe(
+        self,
+        on_rpc_event_callback,
+        channel: Optional[str] = None,
+        redis: Optional[async_redis.Redis] = None,
+    ):
         """
         Redis implementation for subscribe method, receives messages from
         subscription channel.
 
         Note: does block in while loop until .unsubscribe() is called.
         """
-        try:
-            if channel is None:
-                channel = self.sub_channel
-            if redis is None:
-                redis = self.sub_redis
+        pub_sub = self.pub_sub
+        if redis is not None:
+            pub_sub = redis.pubsub(ignore_subscribe_messages=True)
 
-            self.subscribed = True
+        if channel is not None:
+            await pub_sub.subscribe(channel)
+        async with pub_sub as ps:
             # Inside a while loop, wait for incoming events.
-            while await channel.wait_message():
-                await self._process_msg(
-                    await channel.get(), on_rpc_event_callback, channel=channel
-                )
-
-        finally:
-            # Close connections and cleanup
-            self.subscribed = False
-            redis.close()
-            await redis.wait_closed()
+            async for message in ps.listen():
+                if message is not None:
+                    await self._process_msg(
+                        message["data"], on_rpc_event_callback, message["channel"]
+                    )
+        self.subscribed = False
 
     async def unsubscribe(self):
         """
@@ -169,13 +174,13 @@ class RPCRedisCommLayer(AbstractRPCCommLayer):
         out of the while loop in .subscribe()
         """
         if self.subscribed:
-            await self.sub_redis.unsubscribe(self.sub_channel.name)
+            await self.pub_sub.unsubscribe()
             self.subscribed = False
+            await self.sub_redis.close()
 
     async def close(self):
         """
         Stop subscription & close everything
         """
         await self.unsubscribe()
-        self.redis.close()
-        await self.redis.wait_closed()
+        await self.redis.close()

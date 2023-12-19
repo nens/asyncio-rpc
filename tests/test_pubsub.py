@@ -31,7 +31,7 @@ class Executor:
             await publisher.publish(i)
 
         # Clean-up
-        rpc_server = publisher._server
+        rpc_server: RPCServer = publisher._server
         await rpc_server.queue.put(b"END")
         await rpc_server.rpc_commlayer.unsubscribe()
 
