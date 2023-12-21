@@ -1,9 +1,10 @@
 import asyncio
-from uuid import uuid4
 from argparse import ArgumentParser
+from uuid import uuid4
+
 from asyncio_rpc.client import RPCClient
-from asyncio_rpc.models import RPCCall, RPCStack
 from asyncio_rpc.commlayers.redis import RPCRedisCommLayer
+from asyncio_rpc.models import RPCCall, RPCStack
 from asyncio_rpc.serialization import msgpack as msgpack_serialization
 
 

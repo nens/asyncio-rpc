@@ -1,9 +1,10 @@
-from uuid import uuid4
-from .base import AbstractRPCCommLayer
-import redis.asyncio as async_redis
-from ..models import RPCStack, RPCResult, RPCBase, SERIALIZABLE_MODELS
 from typing import Optional
+from uuid import uuid4
 
+import redis.asyncio as async_redis
+
+from ..models import RPCBase, RPCResult, RPCStack, SERIALIZABLE_MODELS
+from .base import AbstractRPCCommLayer
 
 RESULT_EXPIRE_TIME = 300  # seconds
 

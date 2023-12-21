@@ -1,8 +1,10 @@
-import pytest
 from dataclasses import dataclass
 from uuid import uuid4
-from asyncio_rpc.models import RPCCall, RPCStack
+
+import pytest
+
 from asyncio_rpc.client import WrappedException
+from asyncio_rpc.models import RPCCall, RPCStack
 from asyncio_rpc.server import DefaultExecutor
 
 

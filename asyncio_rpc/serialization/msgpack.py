@@ -1,10 +1,13 @@
 import dataclasses
-import msgpack
 from abc import ABC, abstractmethod
-from io import BytesIO
 from datetime import datetime
-from lz4.frame import compress as lz4_compress, decompress as lz4_decompress
+from io import BytesIO
 from typing import Any
+
+import msgpack
+from lz4.frame import compress as lz4_compress
+from lz4.frame import decompress as lz4_decompress
+
 try:
     import numpy as np
 except ImportError:
@@ -64,7 +67,9 @@ class AbstractHandler(ABC):
         Unpack the data back into an instance
         """
 
+
 if np is not None:
+
     class NumpyArrayHandler(AbstractHandler):
         """
         Use np.save and np.load to serialize/deserialize
@@ -90,7 +95,6 @@ if np is not None:
             buf.seek(0)
             return np.load(buf)
 
-
     class NumpyStructuredArrayHandler(NumpyArrayHandler):
         ext_type = 2
         obj_type = np.void  # = the type of structured array's...
@@ -110,7 +114,6 @@ if np is not None:
         @classmethod
         def unpackb(cls, data: bytes) -> np.int32:
             return np.frombuffer(data, dtype=np.int32)[0]
-
 
     class NumpyInt64Handler(AbstractHandler):
         """
@@ -132,6 +135,7 @@ if np is not None:
     register(NumpyStructuredArrayHandler)
     register(NumpyInt32Handler)
     register(NumpyInt64Handler)
+
 
 class DatetimeHandler:
     """
@@ -251,9 +255,13 @@ def dumpb(
     )
 
 
-def loadb(packed: bytes, do_decompress=True, 
-          decompress_func=lz4_decompress, raw=False, 
-          strict_map_key=True):
+def loadb(
+    packed: bytes,
+    do_decompress=True,
+    decompress_func=lz4_decompress,
+    raw=False,
+    strict_map_key=True,
+):
     """
     Load/unpack bytes back to instance
     """
@@ -267,5 +275,5 @@ def loadb(packed: bytes, do_decompress=True,
         max_ext_len=MAX_EXT_LEN,
         max_str_len=MAX_STR_LEN,
         raw=raw,
-        strict_map_key=strict_map_key
+        strict_map_key=strict_map_key,
     )

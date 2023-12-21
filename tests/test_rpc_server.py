@@ -1,7 +1,7 @@
 import pytest
-from asyncio_rpc.server import NamespaceError, DefaultExecutor
+
 from asyncio_rpc.models import RPCStack
-from asyncio_rpc.server import RPCServer
+from asyncio_rpc.server import DefaultExecutor, NamespaceError, RPCServer
 
 
 class MockService:

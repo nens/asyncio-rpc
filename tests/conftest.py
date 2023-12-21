@@ -1,10 +1,12 @@
-import pytest
 import asyncio
 
-from .utils import rpc_commlayer, stop_rpc_server_on_result_of
-from asyncio_rpc.server import RPCServer
+import pytest
+
 from asyncio_rpc.client import RPCClient
 from asyncio_rpc.serialization import msgpack as msgpack_serialization
+from asyncio_rpc.server import RPCServer
+
+from .utils import rpc_commlayer, stop_rpc_server_on_result_of
 
 
 @pytest.fixture
@@ -21,7 +23,8 @@ async def rpc_server():
 def serialize_deserialize():
     def func(value, strict_map_key=True):
         return msgpack_serialization.loadb(
-            msgpack_serialization.dumpb(value), strict_map_key=strict_map_key)
+            msgpack_serialization.dumpb(value), strict_map_key=strict_map_key
+        )
 
     return func
 

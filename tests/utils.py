@@ -1,12 +1,13 @@
 from os import environ
 from uuid import uuid4
-from asyncio_rpc.serialization import msgpack as msgpack_serialization
+
 from asyncio_rpc.commlayers.redis import RPCRedisCommLayer
 from asyncio_rpc.models import RPCCall, RPCStack
-
+from asyncio_rpc.serialization import msgpack as msgpack_serialization
 
 # Set to env_var REDIS_HOST or 'localhost' as default
 REDIS_HOST = environ.get("REDIS_HOST", "localhost")
+
 
 class CustomException(Exception):
     pass

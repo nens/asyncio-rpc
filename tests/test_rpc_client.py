@@ -1,9 +1,10 @@
-from asyncio_rpc.models import RPCMessage
 from asyncio_rpc.client import RPCClient
+from asyncio_rpc.models import RPCMessage
 
 
 async def stop_rpc_client_on_rpc_message(
-            rpc_client: RPCClient, expected_rpc_message: RPCMessage):
+    rpc_client: RPCClient, expected_rpc_message: RPCMessage
+):
     async def on_rpc_message(rpc_message: RPCMessage, channel):
         assert isinstance(rpc_message, RPCMessage)
 

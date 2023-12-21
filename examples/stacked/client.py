@@ -1,12 +1,12 @@
 import asyncio
-from uuid import uuid4
-from typing import List
 from argparse import ArgumentParser
-from asyncio_rpc.client import RPCClient
-from asyncio_rpc.models import RPCCall, RPCStack
-from asyncio_rpc.commlayers.redis import RPCRedisCommLayer
-from asyncio_rpc.serialization import msgpack as msgpack_serialization
+from typing import List
+from uuid import uuid4
 
+from asyncio_rpc.client import RPCClient
+from asyncio_rpc.commlayers.redis import RPCRedisCommLayer
+from asyncio_rpc.models import RPCCall, RPCStack
+from asyncio_rpc.serialization import msgpack as msgpack_serialization
 
 # Create a stacked object structure..
 #  res = service_client.integer.multiply(100, 100)

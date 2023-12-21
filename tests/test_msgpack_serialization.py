@@ -1,7 +1,9 @@
-import pytest
-import numpy as np
 import datetime
 from dataclasses import dataclass
+
+import numpy as np
+import pytest
+
 from asyncio_rpc.serialization import msgpack as msgpack_serialization
 
 
@@ -42,14 +44,14 @@ def test_numpy_int32_serialization(serialize_deserialize):
     value = np.int32(123)
     deserialized = serialize_deserialize(value)
     assert value == deserialized
-    assert type(value) == type(deserialized)
+    assert type(value) is type(deserialized)
 
 
 def test_numpy_int64_serialization(serialize_deserialize):
     value = np.int64(123)
     deserialized = serialize_deserialize(value)
     assert value == deserialized
-    assert type(value) == type(deserialized)
+    assert type(value) is type(deserialized)
 
 
 @dataclass
