@@ -3,11 +3,11 @@
 
 """The setup script."""
 
-from setuptools import setup, find_packages
-
 import codecs
-import re
 import os
+import re
+
+from setuptools import find_packages, setup
 
 here = os.path.abspath(os.path.dirname(__file__))
 
@@ -19,7 +19,8 @@ def read(*parts):
 
 def find_version(*file_paths):
     version_file = read(*file_paths)
-    version_match = re.search(r"^__version__ = ['\"]([^'\"]*)['\"]", version_file, re.M)
+    version_match = re.search(
+        r"^__version__ = ['\"]([^'\"]*)['\"]", version_file, re.M)
     if version_match:
         return version_match.group(1)
     raise RuntimeError("Unable to find version string.")
@@ -38,7 +39,7 @@ lightweight_requirements = [
 ]
 
 numpy_requirements = [
-    "numpy>=1.23",  
+    "numpy>=1.23",
 ]
 
 setup_requirements = []
@@ -54,12 +55,13 @@ setup(
         "License :: OSI Approved :: BSD License",
         "Natural Language :: English",
         "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 3.7",
+        "Programming Language :: Python :: 3.8",
         "Topic :: Scientific/Engineering",
     ],
     description="Asyncio RPC client/server with redis/msgpack/dataclasses",
     entry_points={},
     install_requires=lightweight_requirements,
+    python_requires=">=3.8",
     license="BSD license",
     long_description=readme + "\n\n" + history,
     include_package_data=True,
