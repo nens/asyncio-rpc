@@ -53,6 +53,12 @@ jobs:
           pip install -e .[numpy,test] ${{ matrix.pins }} ipython pytest pytest-asyncio flake8 
           pip list
 
+      - name: Start Redis
+        uses: supercharge/redis-github-action@1.7.0
+        with:
+          redis-version: 5
+          redis-remove-container: true # false by default
+
       - name: Run tests
         shell: bash
         run: |
