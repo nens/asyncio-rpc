@@ -38,25 +38,30 @@ jobs:
             os: ubuntu-20.04
             pins: ""
           - display_name: "2021"
-            python: 3.9
-            os: ubuntu-20.04
-            pins: ""
-          - display_name: "2022"
             python: '3.10'
             os: ubuntu-22.04
             pins: ""
+          - display_name: "2022"
+            python: '3.11'
+            os: ubuntu-22.04
+            pins: ""
+          - display_name: "2023"
+            python: '3.12'
+            os: ubuntu-22.04
+            pins: ""
           - display_name: "latest"
-            python: '3.10'
+            python: '3.12'
             os: ubuntu-latest
             pins: ""
 
+
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
         with:
           lfs: true
 
       - name: Set up Python ${{ matrix.python }}
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python }}
 
