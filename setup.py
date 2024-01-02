@@ -83,7 +83,7 @@ setup(
     extras_require={
         "numpy": numpy_requirements
     },
-    url="https://github.com/nens/asyncio_rpc",
+    url='https://github.com/nens/asyncio-rpc',
     version=find_version("asyncio_rpc", "__init__.py"),
     zip_safe=False,
 )
