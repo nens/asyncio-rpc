@@ -69,6 +69,11 @@ async def do_rpc_call():
             await rpc_client.rpc_commlayer.close()
             await rpc_server.rpc_commlayer.close()
 
+            # Clean exit
+            tasks = [t for t in asyncio.all_tasks() if t is not asyncio.current_task()]
+            if tasks:
+                await asyncio.gather(*tasks)
+
         return result
 
     return wrapper
