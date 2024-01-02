@@ -1,4 +1,0 @@
-msgpack==0.6.0
-lz4==2.1.6
-aioredis==1.2.0
-numpy==1.16.1

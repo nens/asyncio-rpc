@@ -1,5 +1,6 @@
-from asyncio_rpc.models import RPCBase
 from abc import ABC, abstractmethod
+
+from asyncio_rpc.models import RPCBase
 
 
 class AbstractRPCCommLayer(ABC):

@@ -1,19 +1,21 @@
 import asyncio
 import builtins
 import logging
-from typing import Union, List
-from .models import (
-    RPCMessage,
-    RPCResult,
-    RPCException,
-    RPCStack,
-    RPCBase,
-    RPCSubStack,
-    RPCPubResult,
-)
+from typing import List, Union
+
 from asyncio_rpc.commlayers.base import AbstractRPCCommLayer
+from asyncio_rpc.exceptions import NotReceived, RPCTimeoutError, WrappedException
 from asyncio_rpc.pubsub import Subscription
-from asyncio_rpc.exceptions import RPCTimeoutError, WrappedException, NotReceived
+
+from .models import (
+    RPCBase,
+    RPCException,
+    RPCMessage,
+    RPCPubResult,
+    RPCResult,
+    RPCStack,
+    RPCSubStack,
+)
 
 logger = logging.getLogger("asyncio-rpc-client")
 

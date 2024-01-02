@@ -1,11 +1,11 @@
 import asyncio
-from uuid import uuid4
 from argparse import ArgumentParser
-from asyncio_rpc.client import RPCClient
-from asyncio_rpc.models import RPCCall, RPCStack
-from asyncio_rpc.commlayers.redis import RPCRedisCommLayer
-from asyncio_rpc.serialization import msgpack as msgpack_serialization
+from uuid import uuid4
 
+from asyncio_rpc.client import RPCClient
+from asyncio_rpc.commlayers.redis import RPCRedisCommLayer
+from asyncio_rpc.models import RPCCall, RPCStack
+from asyncio_rpc.serialization import msgpack as msgpack_serialization
 
 # Note: This example only contains documentation for how
 # a decorator could be used for more basic documentation

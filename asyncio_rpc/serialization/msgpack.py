@@ -1,11 +1,18 @@
 import dataclasses
-import msgpack
-import numpy as np
 from abc import ABC, abstractmethod
-from io import BytesIO
 from datetime import datetime
-from lz4.frame import compress as lz4_compress, decompress as lz4_decompress
+from io import BytesIO
 from typing import Any
+
+import msgpack
+from lz4.frame import compress as lz4_compress
+from lz4.frame import decompress as lz4_decompress
+
+try:
+    import numpy as np
+except ImportError:
+    np = None
+
 
 # Maximum byte lengths for str/ext
 MAX_STR_LEN = 2147483647
@@ -43,7 +50,7 @@ def register(obj_def):
 
 
 class AbstractHandler(ABC):
-    ext_type: int = None  # Unique number
+    ext_type: int = None  # Unique int
     obj_type: Any = None  # Unique object type
 
     @classmethod
@@ -61,35 +68,73 @@ class AbstractHandler(ABC):
         """
 
 
-class NumpyArrayHandler(AbstractHandler):
-    """
-    Use np.save and np.load to serialize/deserialize
-    numpy array's.
-    """
+if np is not None:
 
-    ext_type = 1
-    obj_type = np.ndarray
+    class NumpyArrayHandler(AbstractHandler):
+        """
+        Use np.save and np.load to serialize/deserialize
+        numpy array's.
+        """
 
-    # Note:
-    # More generic approach, but a bit slower than
-    # packing it as a list/tuple with (dtype, shape, bytes)
-    @classmethod
-    def packb(cls, array: np.ndarray) -> bytes:
-        buf = BytesIO()
-        np.save(buf, array)
-        buf.seek(0)
-        return buf.read()
+        ext_type = 1
+        obj_type = np.ndarray
 
-    @classmethod
-    def unpackb(cls, data: bytes) -> np.ndarray:
-        buf = BytesIO(data)
-        buf.seek(0)
-        return np.load(buf)
+        # Note:
+        # More generic approach, but a bit slower than
+        # packing it as a list/tuple with (dtype, shape, bytes)
+        @classmethod
+        def packb(cls, array: np.ndarray) -> bytes:
+            buf = BytesIO()
+            np.save(buf, array)
+            buf.seek(0)
+            return buf.read()
 
+        @classmethod
+        def unpackb(cls, data: bytes) -> np.ndarray:
+            buf = BytesIO(data)
+            buf.seek(0)
+            return np.load(buf)
 
-class NumpyStructuredArrayHandler(NumpyArrayHandler):
-    ext_type = 2
-    obj_type = np.void  # = the type of structured array's...
+    class NumpyStructuredArrayHandler(NumpyArrayHandler):
+        ext_type = 2
+        obj_type = np.void  # = the type of structured array's...
+
+    class NumpyInt32Handler(AbstractHandler):
+        """
+        Serialize np.int32
+        """
+
+        ext_type = 6
+        obj_type = np.int32
+
+        @classmethod
+        def packb(cls, data: np.int32) -> bytes:
+            return data.tobytes()
+
+        @classmethod
+        def unpackb(cls, data: bytes) -> np.int32:
+            return np.frombuffer(data, dtype=np.int32)[0]
+
+    class NumpyInt64Handler(AbstractHandler):
+        """
+        Serialize np.int64
+        """
+
+        ext_type = 7
+        obj_type = np.int64
+
+        @classmethod
+        def packb(cls, data: np.int64) -> bytes:
+            return data.tobytes()
+
+        @classmethod
+        def unpackb(cls, data: bytes) -> np.int64:
+            return np.frombuffer(data, dtype=np.int64)[0]
+
+    register(NumpyArrayHandler)
+    register(NumpyStructuredArrayHandler)
+    register(NumpyInt32Handler)
+    register(NumpyInt64Handler)
 
 
 class DatetimeHandler:
@@ -157,47 +202,9 @@ class SliceHandler:
         return slice(*loadb(data))
 
 
-class NumpyInt32Handler(AbstractHandler):
-    """
-    Serialize np.int32
-    """
-
-    ext_type = 6
-    obj_type = np.int32
-
-    @classmethod
-    def packb(cls, data: np.int32) -> bytes:
-        return data.tobytes()
-
-    @classmethod
-    def unpackb(cls, data: bytes) -> np.int32:
-        return np.frombuffer(data, dtype=np.int32)[0]
-
-
-class NumpyInt64Handler(AbstractHandler):
-    """
-    Serialize np.int64
-    """
-
-    ext_type = 7
-    obj_type = np.int64
-
-    @classmethod
-    def packb(cls, data: np.int64) -> bytes:
-        return data.tobytes()
-
-    @classmethod
-    def unpackb(cls, data: bytes) -> np.int64:
-        return np.frombuffer(data, dtype=np.int64)[0]
-
-
 # Register custom handlers
-register(NumpyArrayHandler)
-register(NumpyStructuredArrayHandler)
 register(DatetimeHandler)
 register(SliceHandler)
-register(NumpyInt32Handler)
-register(NumpyInt64Handler)
 
 
 def default(obj: Any):
@@ -248,7 +255,13 @@ def dumpb(
     )
 
 
-def loadb(packed: bytes, do_decompress=True, decompress_func=lz4_decompress, raw=False):
+def loadb(
+    packed: bytes,
+    do_decompress=True,
+    decompress_func=lz4_decompress,
+    raw=False,
+    strict_map_key=True,
+):
     """
     Load/unpack bytes back to instance
     """
@@ -262,4 +275,5 @@ def loadb(packed: bytes, do_decompress=True, decompress_func=lz4_decompress, raw
         max_ext_len=MAX_EXT_LEN,
         max_str_len=MAX_STR_LEN,
         raw=raw,
+        strict_map_key=strict_map_key,
     )

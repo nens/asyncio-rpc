@@ -1,13 +1,10 @@
-import pytest
-
-from tests.utils import rpc_client as rpc_client_fixture
-
+from asyncio_rpc.client import RPCClient
 from asyncio_rpc.models import RPCMessage
 
-rpc_client = rpc_client_fixture
 
-
-async def stop_rpc_client_on_rpc_message(rpc_client, expected_rpc_message):
+async def stop_rpc_client_on_rpc_message(
+    rpc_client: RPCClient, expected_rpc_message: RPCMessage
+):
     async def on_rpc_message(rpc_message: RPCMessage, channel):
         assert isinstance(rpc_message, RPCMessage)
 
@@ -19,8 +16,7 @@ async def stop_rpc_client_on_rpc_message(rpc_client, expected_rpc_message):
     return on_rpc_message
 
 
-@pytest.mark.asyncio
-async def test_rpc_message(rpc_client):
+async def test_rpc_message(rpc_client: RPCClient):
     await rpc_client.rpc_commlayer.do_subscribe()
 
     rpc_message = RPCMessage(uid="1", namespace="TEST", data={"foo": "bar"})

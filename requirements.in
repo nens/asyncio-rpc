@@ -1,0 +1,7 @@
+msgpack>=1.0.7
+lz4>=2.1.6
+numpy>=1.23
+redis[hiredis]<5.0
+
+pytest
+pytest-asyncio

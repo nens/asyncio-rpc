@@ -1,0 +1,78 @@
+name: Linux
+
+# Run on PR requests. And on master itself.
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+
+jobs:
+  tests:
+    name: Python ${{ matrix.python }} ${{ matrix.display_name }}
+    runs-on: ${{ matrix.os }}
+    # Service containers to run with `container-job`
+    services:
+      # Label used to access the service container
+      redis:
+        # Docker Hub image
+        image: redis:6-alpine
+        ports: 
+          - 6379:6379
+        # Set health checks to wait until redis has started
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - display_name: "2019"
+            python: 3.8
+            os: ubuntu-20.04
+            pins: ""
+          - display_name: "2020"
+            python: 3.9
+            os: ubuntu-20.04
+            pins: ""
+          - display_name: "2021"
+            python: '3.10'
+            os: ubuntu-22.04
+            pins: ""
+          - display_name: "2022"
+            python: '3.11'
+            os: ubuntu-22.04
+            pins: ""
+          - display_name: "2023"
+            python: '3.12'
+            os: ubuntu-22.04
+            pins: ""
+          - display_name: "latest"
+            python: '3.12'
+            os: ubuntu-latest
+            pins: ""
+
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: true
+
+      - name: Set up Python ${{ matrix.python }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+
+      - name: Install python dependencies
+        shell: bash
+        run: |
+          pip install --disable-pip-version-check --upgrade pip setuptools wheel
+          pip install -e .[numpy,test] ${{ matrix.pins }} ipython pytest pytest-asyncio flake8 
+          pip list
+
+      - name: Run tests
+        shell: bash
+        run: |
+          pytest

@@ -1,9 +1,9 @@
 import asyncio
 from argparse import ArgumentParser
-from asyncio_rpc.server import RPCServer, DefaultExecutor
+
 from asyncio_rpc.commlayers.redis import RPCRedisCommLayer
 from asyncio_rpc.serialization import msgpack as msgpack_serialization
-
+from asyncio_rpc.server import DefaultExecutor, RPCServer
 
 # Create a stacked object structure..
 #  res = Service().integer.multiply(100, 100)

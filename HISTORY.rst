@@ -1,8 +1,11 @@
-0.1.12 (unreleased)
+0.2.0 (unreleased)
 -------------------
 
-- Nothing changed yet.
+- Dropped `aioredis` package, use `redis` package instead.
 
+- Github actions for unit-tests & linting.
+
+- Numpy is optional.
 
 0.1.11 (2023-07-06)
 -------------------
