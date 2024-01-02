@@ -1,5 +1,5 @@
-0.2.0 (unreleased)
--------------------
+0.2.0 (2024-01-02)
+------------------
 
 - Dropped `aioredis` package, use `redis` package instead.
 
