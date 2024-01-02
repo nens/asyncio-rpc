@@ -3,10 +3,8 @@ Asyncio-rpc: Remote procedure calling framework
 
 The Python package for the asyncio remote procedure calling
 
-
-.. image:: https://api.travis-ci.com/nens/asyncio-rpc.svg?branch=master
-        :target: https://travis-ci.com/nens/asyncio-rpc/
-
+.. image:: https://github.com/nens/asyncio-rpc/actions/workflows/test.yml/badge.svg?branch=master
+        :target: https://github.com/nens/asyncio-rpc/actions/workflows/test.yml
 
 .. image:: https://readthedocs.org/projects/asyncio-rpc/badge/?version=latest
         :target: https://asyncio-rpc.readthedocs.io/en/latest/?badge=latest
