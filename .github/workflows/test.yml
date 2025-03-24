@@ -29,13 +29,9 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - display_name: "2019"
-            python: 3.8
-            os: ubuntu-20.04
-            pins: ""
           - display_name: "2020"
             python: 3.9
-            os: ubuntu-20.04
+            os: ubuntu-22.04
             pins: ""
           - display_name: "2021"
             python: '3.10'
