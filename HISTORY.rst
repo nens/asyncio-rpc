@@ -1,7 +1,7 @@
 0.2.1 (unreleased)
 ------------------
 
-- Add Shapely Goeometry support.
+- Add Shapely Geometry support.
 
 
 0.2.0 (2024-01-02)
