@@ -3,7 +3,7 @@ from uuid import uuid4
 
 import redis.asyncio as async_redis
 
-from ..models import RPCBase, RPCResult, RPCStack, SERIALIZABLE_MODELS
+from ..models import SERIALIZABLE_MODELS, RPCBase, RPCResult, RPCStack
 from .base import AbstractRPCCommLayer
 
 RESULT_EXPIRE_TIME = 300  # seconds

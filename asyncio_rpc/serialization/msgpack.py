@@ -2,11 +2,12 @@ import dataclasses
 from datetime import datetime
 from io import BytesIO
 from typing import Any
-from asyncio_rpc.serialization.base import AbstractHandler
 
 import msgpack
 from lz4.frame import compress as lz4_compress
 from lz4.frame import decompress as lz4_decompress
+
+from asyncio_rpc.serialization.base import AbstractHandler
 
 try:
     import numpy as np
@@ -183,7 +184,6 @@ class SliceHandler:
         return slice(*loadb(data))
 
 
-
 def default(obj: Any):
     """
     Serialize (dumpb) hook for obj types that msgpack does not
@@ -263,15 +263,16 @@ register(SliceHandler)
 
 try:
     from asyncio_rpc.serialization.shapely_models import (
-        PointHandler,
-        LineStringHandler,
-        LinearRingHandler,
-        PolygonHandler,
-        MultiPointHandler,
-        MultiLineStringHandler,
-        MultiPolygonHandler,
         GeometryCollectionHandler,
+        LinearRingHandler,
+        LineStringHandler,
+        MultiLineStringHandler,
+        MultiPointHandler,
+        MultiPolygonHandler,
+        PointHandler,
+        PolygonHandler,
     )
+
     register(PointHandler)
     register(LineStringHandler)
     register(LinearRingHandler)

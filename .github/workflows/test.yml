@@ -61,7 +61,7 @@ jobs:
         shell: bash
         run: |
           pip install --disable-pip-version-check --upgrade pip
-          pip install -e .[numpy,test] ${{ matrix.pins }}
+          pip install -e .[numpy,shapely,test] ${{ matrix.pins }}
           pip list
 
       - name: Run tests

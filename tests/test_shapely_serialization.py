@@ -1,18 +1,18 @@
-import pytest
-from shapely.geometry import (
-    Point,
-    LineString,
-    LinearRing,
-    Polygon,
-    MultiPoint,
-    MultiLineString,
-    MultiPolygon,
-    GeometryCollection,
-)
 from dataclasses import dataclass
 
-from asyncio_rpc.serialization import msgpack as msgpack_serialization
+import pytest
+from shapely.geometry import (
+    GeometryCollection,
+    LinearRing,
+    LineString,
+    MultiLineString,
+    MultiPoint,
+    MultiPolygon,
+    Point,
+    Polygon,
+)
 
+from asyncio_rpc.serialization import msgpack as msgpack_serialization
 
 # Skip tests if shapely is not installed
 shapely = pytest.importorskip("shapely")
@@ -60,11 +60,11 @@ def test_polygon_serialization(serialize_deserialize):
     deserialized = serialize_deserialize(value)
     assert value.equals(deserialized)
     assert isinstance(value, type(deserialized))
-    
+
     # Polygon with interior (hole)
     value = Polygon(
         [(0, 0), (10, 0), (10, 10), (0, 10), (0, 0)],
-        [[(2, 2), (2, 8), (8, 8), (8, 2), (2, 2)]]
+        [[(2, 2), (2, 8), (8, 8), (8, 2), (2, 2)]],
     )
     deserialized = serialize_deserialize(value)
     assert value.equals(deserialized)
@@ -82,10 +82,7 @@ def test_multipoint_serialization(serialize_deserialize):
 
 def test_multilinestring_serialization(serialize_deserialize):
     """Test serialization of MultiLineString geometries"""
-    value = MultiLineString([
-        [(0, 0), (1, 1)],
-        [(2, 2), (3, 3)]
-    ])
+    value = MultiLineString([[(0, 0), (1, 1)], [(2, 2), (3, 3)]])
     deserialized = serialize_deserialize(value)
     assert value.equals(deserialized)
     assert isinstance(value, type(deserialized))
@@ -94,10 +91,12 @@ def test_multilinestring_serialization(serialize_deserialize):
 
 def test_multipolygon_serialization(serialize_deserialize):
     """Test serialization of MultiPolygon geometries"""
-    value = MultiPolygon([
-        Polygon([(0, 0), (1, 0), (1, 1), (0, 1), (0, 0)]),
-        Polygon([(2, 2), (3, 2), (3, 3), (2, 3), (2, 2)])
-    ])
+    value = MultiPolygon(
+        [
+            Polygon([(0, 0), (1, 0), (1, 1), (0, 1), (0, 0)]),
+            Polygon([(2, 2), (3, 2), (3, 3), (2, 3), (2, 2)]),
+        ]
+    )
     deserialized = serialize_deserialize(value)
     assert value.equals(deserialized)
     assert isinstance(value, type(deserialized))
@@ -106,11 +105,13 @@ def test_multipolygon_serialization(serialize_deserialize):
 
 def test_geometry_collection_serialization(serialize_deserialize):
     """Test serialization of GeometryCollection"""
-    value = GeometryCollection([
-        Point(0, 0),
-        LineString([(0, 0), (1, 1)]),
-        Polygon([(0, 0), (1, 0), (1, 1), (0, 1), (0, 0)])
-    ])
+    value = GeometryCollection(
+        [
+            Point(0, 0),
+            LineString([(0, 0), (1, 1)]),
+            Polygon([(0, 0), (1, 0), (1, 1), (0, 1), (0, 0)]),
+        ]
+    )
     deserialized = serialize_deserialize(value)
     assert value.equals(deserialized)
     assert isinstance(value, type(deserialized))
@@ -135,10 +136,10 @@ def test_dataclass_with_geometries(serialize_deserialize):
         id=42,
         point=Point(1, 2),
         line=LineString([(0, 0), (1, 1)]),
-        polygon=Polygon([(0, 0), (1, 0), (1, 1), (0, 1), (0, 0)])
+        polygon=Polygon([(0, 0), (1, 0), (1, 1), (0, 1), (0, 0)]),
     )
     deserialized = serialize_deserialize(value)
-    
+
     assert value.id == deserialized.id
     assert value.point.equals(deserialized.point)
     assert value.line.equals(deserialized.line)
@@ -150,10 +151,10 @@ def test_list_of_geometries(serialize_deserialize):
     value = [
         Point(1, 2),
         LineString([(0, 0), (1, 1)]),
-        Polygon([(0, 0), (1, 0), (1, 1), (0, 1), (0, 0)])
+        Polygon([(0, 0), (1, 0), (1, 1), (0, 1), (0, 0)]),
     ]
     deserialized = serialize_deserialize(value)
-    
+
     assert len(value) == len(deserialized)
     for orig, des in zip(value, deserialized):
         assert orig.equals(des)
@@ -163,12 +164,12 @@ def test_list_of_geometries(serialize_deserialize):
 def test_dict_of_geometries(serialize_deserialize):
     """Test serialization of a dictionary containing geometry values"""
     value = {
-        'point': Point(1, 2),
-        'line': LineString([(0, 0), (1, 1)]),
-        'polygon': Polygon([(0, 0), (1, 0), (1, 1), (0, 1), (0, 0)])
+        "point": Point(1, 2),
+        "line": LineString([(0, 0), (1, 1)]),
+        "polygon": Polygon([(0, 0), (1, 0), (1, 1), (0, 1), (0, 0)]),
     }
     deserialized = serialize_deserialize(value)
-    
+
     assert len(value) == len(deserialized)
     for key in value:
         assert value[key].equals(deserialized[key])
