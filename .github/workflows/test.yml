@@ -29,10 +29,6 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - display_name: "2020"
-            python: 3.9
-            os: ubuntu-22.04
-            pins: ""
           - display_name: "2021"
             python: '3.10'
             os: ubuntu-22.04
@@ -64,8 +60,8 @@ jobs:
       - name: Install python dependencies
         shell: bash
         run: |
-          pip install --disable-pip-version-check --upgrade pip setuptools wheel
-          pip install -e .[numpy,test] ${{ matrix.pins }} ipython pytest pytest-asyncio flake8 
+          pip install --disable-pip-version-check --upgrade pip
+          pip install -e .[numpy,test] ${{ matrix.pins }}
           pip list
 
       - name: Run tests

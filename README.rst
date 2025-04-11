@@ -23,7 +23,7 @@ Overview
 Features
 --------
  - Asyncio RPC client/server
- - Msgpack serialization with option to use own dataclasses (Python 3.8)
+ - Msgpack serialization with option to use own dataclasses (Python 3.10)
  - Redis communication layer
  - Other serialization methods and communication layers can be added
 
@@ -40,4 +40,4 @@ The examples can be run from this directory, for the dataclass example
 
 Testing
 -------
-    >>> docker-compose run pytest --cov=asyncio_rpc --cov-report=html
+    >>> docker compose run asyncio_rpc pytest --cov=asyncio_rpc --cov-report=html

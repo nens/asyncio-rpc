@@ -1,8 +1,8 @@
 import dataclasses
-from abc import ABC, abstractmethod
 from datetime import datetime
 from io import BytesIO
 from typing import Any
+from asyncio_rpc.serialization.base import AbstractHandler
 
 import msgpack
 from lz4.frame import compress as lz4_compress
@@ -47,25 +47,6 @@ def register(obj_def):
         assert hasattr(obj_def, "obj_type") and hasattr(obj_def, "ext_type")
         REGISTRY["obj_types"][obj_def.obj_type] = obj_def
         REGISTRY["ext_types"][obj_def.ext_type] = obj_def
-
-
-class AbstractHandler(ABC):
-    ext_type: int = None  # Unique int
-    obj_type: Any = None  # Unique object type
-
-    @classmethod
-    @abstractmethod
-    def packb(cls, instance: Any) -> bytes:
-        """
-        Pack the instance into bytes
-        """
-
-    @classmethod
-    @abstractmethod
-    def unpackb(cls, data: bytes) -> Any:
-        """
-        Unpack the data back into an instance
-        """
 
 
 if np is not None:
@@ -202,10 +183,6 @@ class SliceHandler:
         return slice(*loadb(data))
 
 
-# Register custom handlers
-register(DatetimeHandler)
-register(SliceHandler)
-
 
 def default(obj: Any):
     """
@@ -277,3 +254,32 @@ def loadb(
         raw=raw,
         strict_map_key=strict_map_key,
     )
+
+
+# Register custom handlers
+register(DatetimeHandler)
+register(SliceHandler)
+
+
+try:
+    from asyncio_rpc.serialization.shapely_models import (
+        PointHandler,
+        LineStringHandler,
+        LinearRingHandler,
+        PolygonHandler,
+        MultiPointHandler,
+        MultiLineStringHandler,
+        MultiPolygonHandler,
+        GeometryCollectionHandler,
+    )
+    register(PointHandler)
+    register(LineStringHandler)
+    register(LinearRingHandler)
+    register(PolygonHandler)
+    register(MultiPointHandler)
+    register(MultiLineStringHandler)
+    register(MultiPolygonHandler)
+    register(GeometryCollectionHandler)
+except ImportError:
+    # Shapely is not installed, skip shapely handlers
+    pass

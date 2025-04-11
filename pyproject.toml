@@ -1,0 +1,61 @@
+[build-system]
+requires = ["setuptools>=77.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.poetry]
+name = "asyncio_rpc"
+version = "0.2.1.dev0"
+description = "Asyncio RPC client/server with redis/msgpack/dataclasses"
+authors = ["Jelle Prins <jelle.prins@nelen-schuurmans.nl>"]
+license = "BSD license"
+readme = "README.rst"
+repository = "https://github.com/nens/asyncio-rpc"
+keywords = ["asyncio", "rpc"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: BSD License",
+    "Natural Language :: English",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Topic :: Scientific/Engineering",
+]
+packages = [
+    {include = "asyncio_rpc"}
+]
+include = ["HISTORY.rst"]
+
+[project]
+name = "asyncio_rpc"
+dynamic = ["version"]
+description = "Asyncio RPC client/server with redis/msgpack/dataclasses"
+readme = "README.rst"
+authors = [
+    {name = "Jelle Prins", email = "jelle.prins@nelen-schuurmans.nl"}
+]
+license = {text = "BSD license"}
+requires-python = ">=3.10"
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: BSD License", 
+    "Natural Language :: English",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Topic :: Scientific/Engineering",
+]
+dependencies = [
+    "msgpack>=1.0.7",
+    "lz4>=2.1.6",
+    "redis[hiredis]<5.0",
+]
+
+[project.optional-dependencies]
+test = ["pytest", "pytest-asyncio"]
+numpy = ["numpy==1.26.*"]
+shapely = ["shapely>=2.0.1"]
+dev = ["ipdb", "mypy", "ruff"]
+
+[project.urls]
+Homepage = "https://github.com/nens/asyncio-rpc"
+
