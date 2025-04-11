@@ -6,12 +6,20 @@ jobs:
   lint:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
       - name: Set up Python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
-          python-version: 3.8
+          python-version: "3.10"
 
-      - name: Run black, flake8 and isort
-        uses: pre-commit/action@v2.0.3
+      - name: Get changed files
+        id: changed_files
+        uses: tj-actions/changed-files@bab30c2299617f6615ec02a68b9a40d10bd21366 # v45.0.5
+        with:
+          files_ignore: "**/migrations/*"
+
+      - name: Run pre-commit checks
+        uses: pre-commit/action@576ff52938d158a24ac7e009dfa94b1455e7df99 # v3.0.1
+        with:
+          extra_args: --files ${{ steps.changed_files.outputs.all_changed_files }}

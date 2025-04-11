@@ -4,6 +4,11 @@
 Installation
 ============
 
+Requirements
+-----------
+
+asyncio-rpc requires Python 3.10 or higher.
+
 Stable release
 --------------
 
