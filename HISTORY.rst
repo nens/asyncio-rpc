@@ -1,7 +1,7 @@
 0.3.1 (unreleased)
 ------------------
 
-- Nothing changed yet.
+- Improve version discovery.
 
 
 0.3.0 (2025-04-14)
