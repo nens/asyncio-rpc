@@ -1,4 +1,4 @@
-0.2.1 (unreleased)
+0.3.0 (2025-04-14)
 ------------------
 
 - Add Shapely Geometry support.
