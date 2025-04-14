@@ -29,7 +29,7 @@ jobs:
         python -m build
 
     - name: Upload Github release
-      uses: softprops/action-gh-release@v2
+      uses: softprops/action-gh-release@36833a1c712e139c96b443e3af070e95d9c0f193
       with:
         files: dist/*
         body: "Release for ${{ github.ref }}"
@@ -37,8 +37,8 @@ jobs:
     - name: Test install built package
       run: |
         pip install dist/*.whl
-
+        
     - name: Publish package to PyPI
-      uses: pypa/gh-action-pypi-publish@release/v1
+      uses: pypa/gh-action-pypi-publish@76f52bc884231f62b9a034ebfe128415bbaabdfc
       with:
         password: ${{ secrets.PYPI_UPLOAD_TOKEN }}

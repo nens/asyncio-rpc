@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [tool.poetry]
 name = "asyncio_rpc"
-version = "0.2.1.dev0"
+version = "0.3.1.dev0"
 description = "Asyncio RPC client/server with redis/msgpack/dataclasses"
 authors = ["Jelle Prins <jelle.prins@nelen-schuurmans.nl>"]
 license = "BSD license"
@@ -59,3 +59,9 @@ dev = ["ipdb", "mypy", "ruff"]
 [project.urls]
 Homepage = "https://github.com/nens/asyncio-rpc"
 
+[tool.zest-releaser]
+release = false
+python-file-with-version = "asyncio_rpc/__init__.py"
+
+[tool.setuptools.dynamic]
+version = {attr = "asyncio_rpc.__version__"}
