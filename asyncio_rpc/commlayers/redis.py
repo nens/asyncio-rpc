@@ -36,7 +36,12 @@ class RPCRedisCommLayer(AbstractRPCCommLayer):
         self.serialization = serialization
 
         # Redis for publishing
-        self.redis = async_redis.from_url(f"redis://{host}")
+        self.redis = async_redis.from_url(
+            f"redis://{host}",
+            socket_keepalive=True,
+            retry_on_timeout=True,
+            health_check_interval=None,  # no health checks for Redis pub/sub
+        )
 
         # By default register all RPC models
         for model in SERIALIZABLE_MODELS:
