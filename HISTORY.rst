@@ -1,4 +1,4 @@
-0.3.2 (unreleased)
+0.3.2 (2025-04-30)
 ------------------
 
 - Set Redis socket keepalive and retry on timeout for RPCRedisCommLayer.
