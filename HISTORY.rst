@@ -1,7 +1,7 @@
 0.3.3 (unreleased)
 ------------------
 
-- Nothing changed yet.
+- Try more gracefully catch destroyed tasks and connection issues in main loop
 
 
 0.3.2 (2025-04-30)
