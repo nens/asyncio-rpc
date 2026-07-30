@@ -290,7 +290,11 @@ class RPCClient(object):
                 )
                 for task in finished:
                     if task.exception():
-                        logger.error(task.exception())
+                        exc = task.exception()
+                        if isinstance(exc, (ConnectionError, OSError)):
+                            logger.warning("Connection lost, reconnecting: %s", exc)
+                        else:
+                            logger.exception(exc)                        
                         task.print_stack()
                         coro, args = main_tasks[task]
                         new_task = asyncio.ensure_future(coro(*args))
