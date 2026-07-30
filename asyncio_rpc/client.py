@@ -93,7 +93,7 @@ class RPCClient(object):
 
         if count == 0:
             raise NotReceived(
-                f"subscribe_call was not " f"received by any server: {rpc_sub_stack}"
+                f"subscribe_call was not received by any server: {rpc_sub_stack}"
             )
 
         return subscription
@@ -137,7 +137,7 @@ class RPCClient(object):
             self.futures.pop(rpc_func_stack.uid)
             future.set_result(None)
             raise NotReceived(
-                f"rpc_call was not received " f"by any subscriber {rpc_func_stack}"
+                f"rpc_call was not received by any subscriber {rpc_func_stack}"
             )
 
         if self.processing:
@@ -294,7 +294,7 @@ class RPCClient(object):
                         if isinstance(exc, (ConnectionError, OSError)):
                             logger.warning("Connection lost, reconnecting: %s", exc)
                         else:
-                            logger.exception(exc)                        
+                            logger.exception(exc)
                         task.print_stack()
                         coro, args = main_tasks[task]
                         new_task = asyncio.ensure_future(coro(*args))
