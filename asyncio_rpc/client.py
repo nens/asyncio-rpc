@@ -282,19 +282,25 @@ class RPCClient(object):
 
         except_cnt = -1
 
-        while running:
-            except_cnt += 1
-            finished, running = await asyncio.wait(
-                running, return_when=asyncio.FIRST_EXCEPTION
-            )
-            for task in finished:
-                if task.exception():
-                    logger.exception(task.exception())
-                    task.print_stack()
-                    coro, args = main_tasks[task]
-                    new_task = asyncio.ensure_future(coro(*args))
-                    main_tasks[new_task] = (coro, args)
-                    running.add(new_task)
+        try:
+            while running:
+                except_cnt += 1
+                finished, running = await asyncio.wait(
+                    running, return_when=asyncio.FIRST_EXCEPTION
+                )
+                for task in finished:
+                    if task.exception():
+                        logger.error(task.exception())
+                        task.print_stack()
+                        coro, args = main_tasks[task]
+                        new_task = asyncio.ensure_future(coro(*args))
+                        main_tasks[new_task] = (coro, args)
+                        running.add(new_task)
+        finally:
+            for task in running:
+                task.cancel()
+            if running:
+                await asyncio.gather(*running, return_exceptions=True)
 
     async def close(self):
         """
