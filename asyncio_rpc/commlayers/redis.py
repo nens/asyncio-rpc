@@ -2,6 +2,7 @@ from typing import Optional
 from uuid import uuid4
 
 import redis.asyncio as async_redis
+from redis.exceptions import ConnectionError
 
 from ..models import SERIALIZABLE_MODELS, RPCBase, RPCResult, RPCStack
 from .base import AbstractRPCCommLayer
@@ -67,10 +68,12 @@ class RPCRedisCommLayer(AbstractRPCCommLayer):
         self.pubchannel = pubchannel
         self.redis: async_redis.Redis
         self.pub_sub = None
+        self._closing = False
 
     async def do_subscribe(self):
         if not self.subscribed:
             # By default subscribe
+            self._closing = False
             self.sub_redis = async_redis.from_url(f"redis://{self.host}")
             self.pub_sub = self.sub_redis.pubsub(ignore_subscribe_messages=True)
             await self.pub_sub.subscribe(self.subchannel)
@@ -163,22 +166,28 @@ class RPCRedisCommLayer(AbstractRPCCommLayer):
         if redis is not None:
             pub_sub = redis.pubsub(ignore_subscribe_messages=True)
 
-        if channel is not None:
-            await pub_sub.subscribe(channel)
-        async with pub_sub as ps:
-            # Inside a while loop, wait for incoming events.
-            async for message in ps.listen():
-                if message is not None:
-                    await self._process_msg(
-                        message["data"], on_rpc_event_callback, message["channel"]
-                    )
-        self.subscribed = False
+        try:
+            if channel is not None:
+                await pub_sub.subscribe(channel)
+            async with pub_sub as ps:
+                # Inside a while loop, wait for incoming events.
+                async for message in ps.listen():
+                    if message is not None:
+                        await self._process_msg(
+                            message["data"], on_rpc_event_callback, message["channel"]
+                        )
+        except ConnectionError:
+            if not self._closing:
+                raise
+        finally:
+            self.subscribed = False
 
     async def unsubscribe(self):
         """
         Redis implementation for unsubscribe. Stops subscription and breaks
         out of the while loop in .subscribe()
         """
+        self._closing = True
         if self.subscribed:
             await self.pub_sub.unsubscribe()
             self.subscribed = False
