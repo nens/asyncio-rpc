@@ -1,7 +1,7 @@
 0.3.4 (unreleased)
 ------------------
 
-- Nothing changed yet.
+- Improve unsubscribe behavior in Redis communication layer.
 
 
 0.3.3 (2026-07-31)
