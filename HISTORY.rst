@@ -1,4 +1,4 @@
-0.3.4 (unreleased)
+0.3.4 (2026-09-29)
 ------------------
 
 - Improve unsubscribe behavior in Redis communication layer.
